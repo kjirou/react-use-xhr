@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/kjirou/react-use-xhr/issues"
   },
-  "homepage": "https://github.com/kjirou/react-use-xhr#readme"
+  "homepage": "https://github.com/kjirou/react-use-xhr#readme",
+  "devDependencies": {
+    "typescript": "^3.9.6"
+  }
 }
