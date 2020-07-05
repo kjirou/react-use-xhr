@@ -2,13 +2,19 @@ import * as jsdom from 'jsdom'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import * as ReactTestRenderer from 'react-test-renderer'
+import * as sinon from 'sinon'
 import xhrMock from 'xhr-mock'
 
 import {
   HttpMethod,
+  UseXhrResult,
   sendHttpRequest,
   useXhr,
 } from '../index'
+
+const sleep = (time: number): Promise<void> => {
+  return new Promise((resolve) => {setTimeout(resolve, time)})
+}
 
 describe('src/index', () => {
   beforeEach(() => {
@@ -151,6 +157,54 @@ describe('src/index', () => {
 
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toContain(' associated with ')
+      })
+    })
+
+    // TODO: A case of useXhr(undefined, undefined)
+
+    describe('When requirementId and requestData are always the same', () => {
+      type TesterProps = {
+        handleResult: (result: UseXhrResult) => void,
+      }
+      const Tester: React.FC<TesterProps> = (props) => {
+        const result = useXhr('', {
+          httpMethod: 'GET',
+          url: '/foo',
+        })
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+
+      beforeEach(() => {
+        xhrMock.use('GET', '/foo', {
+          status: 200,
+          body: 'BAR',
+        })
+      })
+
+      it('should return isLoading=true without any xhr instance at the first render', async () => {
+        const handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+        })
+        expect(handleResult.firstCall.args[0].isLoading).toBe(true)
+        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+      })
+
+      it('should return isLoading=false with a xhr instance at the last render', async () => {
+        const handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+        })
+        await sleep(50)
+        expect(handleResult.lastCall.args[0].isLoading).toBe(false)
+        expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
+        expect(handleResult.lastCall.args[0].xhr.status).toBe(200)
+        expect(handleResult.lastCall.args[0].xhr.responseText).toBe('BAR')
       })
     })
   })

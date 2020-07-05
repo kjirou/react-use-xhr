@@ -40,13 +40,16 @@ export function sendHttpRequest(
 export type UseXhrRequirementId = number | string
 
 type UseXhrState = {
+  reservedNewRequest: boolean,
   resolvedRequirementId?: UseXhrRequirementId | undefined,
   response?: SendHttpRequestResult,
   unresolvedRequestData?: SendHttpRequestData,
   unresolvedRequirementId?: UseXhrRequirementId | undefined,
 }
 
-const defaultUseXhrState: UseXhrState = {}
+const defaultUseXhrState: UseXhrState = {
+  reservedNewRequest: false,
+}
 
 export type UseXhrResult = {
   isLoading: boolean,
@@ -66,7 +69,7 @@ export function useXhr(
     requirementId !== undefined &&
     requirementId === state.unresolvedRequirementId &&
     !areEqualAAndB(requestData, state.unresolvedRequestData)
-  const startNewRequestWithThisRender =
+  const startNewRequest =
     requirementId !== undefined &&
     requestData !== undefined &&
     state.unresolvedRequirementId === undefined &&
@@ -78,15 +81,19 @@ export function useXhr(
     throw new Error('Can not change the `requestData` associated with the `requirementId`.')
   }
 
-  if (startNewRequestWithThisRender) {
+  if (startNewRequest) {
+    // (State Transition: 1)
     setState({
+      reservedNewRequest: true,
       unresolvedRequirementId: requirementId,
       unresolvedRequestData: requestData,
     })
   } else if (state.unresolvedRequirementId !== undefined && state.response) {
     // Matches `requirementId`s, then this hook returns `response` as a result.
     if (requirementId === state.unresolvedRequirementId) {
+      // (State Transition: 4-A)
       setState({
+        reservedNewRequest: false,
         resolvedRequirementId: requirementId,
         response: state.response,
       })
@@ -97,15 +104,25 @@ export function useXhr(
     // And probably will make the request again with the next render,
     //   if the `requirementId` is also set in the next render.
     } else {
+      // (State Transition: 4-B)
       setState(defaultUseXhrState)
     }
   }
 
   React.useEffect(function() {
-    if (startNewRequestWithThisRender) {
+    if (state.reservedNewRequest) {
+      // (State Transition: 2)
+      setState({
+        reservedNewRequest: false,
+        unresolvedRequirementId: state.unresolvedRequirementId,
+        unresolvedRequestData: state.unresolvedRequestData,
+      })
+
       sendHttpRequest(requestData as SendHttpRequestData, function(error_, response) {
         // TODO: Receive the error object too.
+        // (State Transition: 3)
         setState({
+          reservedNewRequest: false,
           unresolvedRequirementId: state.unresolvedRequirementId,
           unresolvedRequestData: state.unresolvedRequestData,
           response,
@@ -115,8 +132,7 @@ export function useXhr(
   })
 
   const result: UseXhrResult = {
-    // TODO
-    isLoading: startNewRequestWithThisRender || state.unresolvedRequirementId !== undefined,
+    isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
   if (state.resolvedRequirementId !== undefined && state.response) {
     result.xhr = state.response.xhr
