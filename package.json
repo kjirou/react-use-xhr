@@ -11,11 +11,14 @@
     "url": "git+https://github.com/kjirou/react-use-xhr.git"
   },
   "author": "kjirou",
-  "license": "MIT",
+  "license": "SEE LICENSE IN https://github.com/kjirou/react-use-xhr/blob/master/LICENSE",
   "bugs": {
     "url": "https://github.com/kjirou/react-use-xhr/issues"
   },
   "homepage": "https://github.com/kjirou/react-use-xhr#readme",
+  "engines": {
+    "node": ">=10"
+  },
   "devDependencies": {
     "typescript": "^3.9.6"
   }
