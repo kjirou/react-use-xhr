@@ -160,9 +160,48 @@ describe('src/index', () => {
       })
     })
 
-    // TODO: A case of useXhr(undefined, undefined)
+    describe('when requirementId and requestData are always undefined', () => {
+      type TesterProps = {
+        handleResult: (result: UseXhrResult) => void,
+      }
+      const Tester: React.FC<TesterProps> = (props) => {
+        const result = useXhr(undefined, undefined)
+        props.handleResult(result)
+        return React.createElement('div')
+      }
 
-    describe('When requirementId and requestData are always the same', () => {
+      beforeEach(() => {
+        xhrMock.use('GET', '/foo', {
+          status: 200,
+          body: 'BAR',
+        })
+      })
+
+      it('should return isLoading=false without any xhr instance at the first render', async () => {
+        const handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+        })
+        expect(handleResult.firstCall.args[0].isLoading).toBe(false)
+        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+      })
+
+      it('should return isLoading=false without any xhr instance at the last render', async () => {
+        const handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+        })
+        await sleep(50)
+        expect(handleResult.lastCall.args[0].isLoading).toBe(false)
+        expect(handleResult.lastCall.args[0].xhr).toBe(undefined)
+      })
+    })
+
+    describe('when requirementId and requestData are always the same', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
