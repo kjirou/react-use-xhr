@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "$(npm bin)/jest"
   },
   "repository": {
     "type": "git",
@@ -21,10 +21,22 @@
     "node": ">=10"
   },
   "devDependencies": {
+    "@types/jest": "^26.0.3",
+    "@types/jsdom": "^16.2.3",
     "@types/lodash.isequal": "^4.5.5",
     "@types/react": "^16.9.41",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-test-renderer": "^16.9.2",
+    "@types/sinon": "^9.0.4",
+    "jest": "^26.1.0",
+    "jsdom": "^16.2.2",
     "react": "^16.13.1",
-    "typescript": "^3.9.6"
+    "react-dom": "^16.13.1",
+    "react-test-renderer": "^16.13.1",
+    "sinon": "^9.0.2",
+    "ts-jest": "^26.1.1",
+    "typescript": "^3.9.6",
+    "xhr-mock": "^2.5.1"
   },
   "dependencies": {
     "lodash.isequal": "^4.5.0"
