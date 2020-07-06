@@ -72,7 +72,7 @@ export function useXhr(
   const startNewRequest =
     requirementId !== undefined &&
     requestData !== undefined &&
-    state.unresolvedRequirementId === undefined &&
+    requirementId !== state.unresolvedRequirementId &&
     requirementId !== state.resolvedRequirementId
 
   if (invalidRequestData) {
@@ -82,50 +82,35 @@ export function useXhr(
   }
 
   if (startNewRequest) {
-    // (State Transition: 1)
+    // State Transition: 1
     setState({
       reservedNewRequest: true,
       unresolvedRequirementId: requirementId,
       unresolvedRequestData: requestData,
     })
-  } else if (state.unresolvedRequirementId !== undefined && state.response) {
-    // Matches `requirementId`s, then this hook returns `response` as a result.
-    if (requirementId === state.unresolvedRequirementId) {
-      // (State Transition: 4-A)
-      setState({
-        reservedNewRequest: false,
-        resolvedRequirementId: requirementId,
-        response: state.response,
-      })
-    // Received the response but the `requirementId`s do not match.
-    // So this hook thinks the required data has changed during the last request.
-    // Therefore, does not return the received response as a result.
-    //
-    // And probably will make the request again with the next render,
-    //   if the `requirementId` is also set in the next render.
-    } else {
-      // (State Transition: 4-B)
-      setState(defaultUseXhrState)
-    }
   }
 
   React.useEffect(function() {
     if (state.reservedNewRequest) {
-      // (State Transition: 2)
+      // State Transition: 2
       setState({
         reservedNewRequest: false,
         unresolvedRequirementId: state.unresolvedRequirementId,
         unresolvedRequestData: state.unresolvedRequestData,
       })
 
-      sendHttpRequest(requestData as SendHttpRequestData, function(error_, response) {
-        // TODO: Receive the error object too.
-        // (State Transition: 3)
-        setState({
-          reservedNewRequest: false,
-          unresolvedRequirementId: state.unresolvedRequirementId,
-          unresolvedRequestData: state.unresolvedRequestData,
-          response,
+      sendHttpRequest(state.unresolvedRequestData as SendHttpRequestData, function(error_, response) {
+        // State Transition: 3
+        setState(function(current) {
+          if (state.unresolvedRequirementId === current.unresolvedRequirementId) {
+            // TODO: Receive the error object too.
+            return {
+              reservedNewRequest: false,
+              resolvedRequirementId: current.unresolvedRequirementId,
+              response,
+            }
+          }
+          return current
         })
       })
     }
