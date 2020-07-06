@@ -98,7 +98,7 @@ describe('src/index', () => {
 
       it('should throw an error if only requestData is undefined', async () => {
         const Tester = () => {
-          useXhr('', undefined)
+          useXhr('a', undefined)
           return React.createElement('div')
         }
         let error: any = undefined
@@ -129,7 +129,7 @@ describe('src/index', () => {
 
       it('should throw an error if requestData is changed in the same requirementId', async () => {
         const Tester: React.FC<{body: string}> = (props) => {
-          useXhr('', {
+          useXhr('a', {
             httpMethod: 'GET',
             url: '/foo',
             body: props.body,
@@ -206,7 +206,7 @@ describe('src/index', () => {
         handleResult: (result: UseXhrResult) => void,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr('', {
+        const result = useXhr('a', {
           httpMethod: 'GET',
           url: '/foo',
         })
