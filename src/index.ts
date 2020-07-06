@@ -62,6 +62,7 @@ export function useXhr(
   requestData: SendHttpRequestData | undefined,
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
+  const unmountedRef = React.useRef(false)
   const invalidRequestData =
     requirementId === undefined && requestData !== undefined ||
     requirementId !== undefined && requestData === undefined
@@ -91,7 +92,13 @@ export function useXhr(
   }
 
   React.useEffect(function() {
-    if (state.reservedNewRequest) {
+    return function() {
+      unmountedRef.current = true
+    }
+  }, [])
+
+  React.useEffect(function() {
+    if (!unmountedRef.current && state.reservedNewRequest) {
       // State Transition: 2
       setState({
         reservedNewRequest: false,
@@ -100,18 +107,20 @@ export function useXhr(
       })
 
       sendHttpRequest(state.unresolvedRequestData as SendHttpRequestData, function(error_, response) {
-        // State Transition: 3
-        setState(function(current) {
-          if (state.unresolvedRequirementId === current.unresolvedRequirementId) {
-            // TODO: Receive the error object too.
-            return {
-              reservedNewRequest: false,
-              resolvedRequirementId: current.unresolvedRequirementId,
-              response,
+        if (!unmountedRef.current) {
+          // State Transition: 3
+          setState(function(current) {
+            if (state.unresolvedRequirementId === current.unresolvedRequirementId) {
+              // TODO: Receive the error object too.
+              return {
+                reservedNewRequest: false,
+                resolvedRequirementId: current.unresolvedRequirementId,
+                response,
+              }
             }
-          }
-          return current
-        })
+            return current
+          })
+        }
       })
     }
   })

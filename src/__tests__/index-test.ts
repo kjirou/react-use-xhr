@@ -246,5 +246,9 @@ describe('src/index', () => {
         expect(handleResult.lastCall.args[0].xhr.responseText).toBe('BAR')
       })
     })
+
+    describe('when the hook is unmounted in request', () => {
+      it.todo('should do nothing')
+    })
   })
 })
