@@ -128,7 +128,7 @@ export function useXhr(
   const result: UseXhrResult = {
     isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
-  if (state.resolvedRequirementId !== undefined && state.response) {
+  if (requirementId !== undefined && state.resolvedRequirementId !== undefined && state.response) {
     result.xhr = state.response.xhr
   }
   return result
