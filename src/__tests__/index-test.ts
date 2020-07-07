@@ -170,33 +170,28 @@ describe('src/index', () => {
         props.handleResult(result)
         return React.createElement('div')
       }
+      let handleResult: any
 
-      beforeEach(() => {
+      beforeEach(async () => {
         xhrMock.use('GET', '/foo', {
           status: 200,
           body: 'BAR',
         })
-      })
-
-      it('should return isLoading=false without any xhr instance at the first render', async () => {
-        const handleResult = sinon.spy()
-        await ReactTestRenderer.act(async () => {
-          ReactTestRenderer.create(
-            React.createElement(Tester, {handleResult}),
-          )
-        })
-        expect(handleResult.firstCall.args[0].isLoading).toBe(false)
-        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
-      })
-
-      it('should return isLoading=false without any xhr instance at the last render', async () => {
-        const handleResult = sinon.spy()
+        handleResult = sinon.spy()
         await ReactTestRenderer.act(async () => {
           ReactTestRenderer.create(
             React.createElement(Tester, {handleResult}),
           )
         })
         await sleep(50)
+      })
+
+      it('should return isLoading=false without any xhr instance at the first render', () => {
+        expect(handleResult.firstCall.args[0].isLoading).toBe(false)
+        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+      })
+
+      it('should return isLoading=false without any xhr instance at the last render', () => {
         expect(handleResult.lastCall.args[0].isLoading).toBe(false)
         expect(handleResult.lastCall.args[0].xhr).toBe(undefined)
       })
@@ -214,33 +209,28 @@ describe('src/index', () => {
         props.handleResult(result)
         return React.createElement('div')
       }
+      let handleResult: any
 
-      beforeEach(() => {
+      beforeEach(async () => {
         xhrMock.use('GET', '/foo', {
           status: 200,
           body: 'BAR',
         })
-      })
-
-      it('should return isLoading=true without any xhr instance at the first render', async () => {
-        const handleResult = sinon.spy()
-        await ReactTestRenderer.act(async () => {
-          ReactTestRenderer.create(
-            React.createElement(Tester, {handleResult}),
-          )
-        })
-        expect(handleResult.firstCall.args[0].isLoading).toBe(true)
-        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
-      })
-
-      it('should return isLoading=false with a xhr instance at the last render', async () => {
-        const handleResult = sinon.spy()
+        handleResult = sinon.spy()
         await ReactTestRenderer.act(async () => {
           ReactTestRenderer.create(
             React.createElement(Tester, {handleResult}),
           )
         })
         await sleep(50)
+      })
+
+      it('should return isLoading=true without any xhr instance at the first render', () => {
+        expect(handleResult.firstCall.args[0].isLoading).toBe(true)
+        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+      })
+
+      it('should return isLoading=false with a xhr instance at the last render', () => {
         expect(handleResult.lastCall.args[0].isLoading).toBe(false)
         expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
         expect(handleResult.lastCall.args[0].xhr.status).toBe(200)
