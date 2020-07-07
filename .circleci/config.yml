@@ -8,13 +8,11 @@ jobs:
     steps:
       - checkout
       - node/install:
-        node-version: 12.18.2
+          node-version: 12.18.2
       - run: node --version
       - run: npm --version
-      - node/with-cache:
-          steps:
-            - run: npm install
-            - run: npm test
+      - run: npm install
+      - run: npm test
 workflows:
     build-and-test:
       jobs:
