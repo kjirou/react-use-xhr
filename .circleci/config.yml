@@ -7,6 +7,10 @@ jobs:
       name: node/default
     steps:
       - checkout
+      - node/install:
+        node-version: 12.18.2
+      - run: node --version
+      - run: npm --version
       - node/with-cache:
           steps:
             - run: npm install
