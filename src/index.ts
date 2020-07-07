@@ -2,7 +2,6 @@ import * as React from 'react'
 
 import isEqual = require('lodash.isequal')
 
-// TODO: Does not directly depend on lodash.isequal.
 function areEqualAAndB(a: any, b: any): boolean {
   return isEqual(a, b)
 }
@@ -56,7 +55,6 @@ export type UseXhrResult = {
   xhr?: XMLHttpRequest,
 }
 
-// TODO: Make to receive body/headers types for each HttpMethod.
 export function useXhr(
   requirementId: UseXhrRequirementId | undefined,
   requestData: SendHttpRequestData | undefined,
