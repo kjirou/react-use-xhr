@@ -8,7 +8,9 @@ import xhrMock, {delay, sequence} from 'xhr-mock'
 import {
   HttpMethod,
   UseXhrResult,
+  UseXhrResultCache,
   SendHttpRequestData,
+  recordResultCache,
   sendHttpRequest,
   useXhr,
 } from '../index'
@@ -64,6 +66,57 @@ describe('src/index', () => {
           })
         })
       })
+    })
+  })
+
+  describe('recordResultCache', () => {
+    it('should append a new item to the last', function() {
+      const newCaches = recordResultCache(
+        [
+          {
+            requirementId: 'a',
+            result: {
+              xhr: new XMLHttpRequest(),
+            },
+          },
+        ],
+        {
+          requirementId: 'b',
+          result: {
+            xhr: new XMLHttpRequest(),
+          },
+        },
+        100
+      )
+      expect(newCaches[1].requirementId).toBe('b')
+    })
+
+    it('should remove an excess item from the first', function() {
+      const newCaches = recordResultCache(
+        [
+          {
+            requirementId: 'a',
+            result: {
+              xhr: new XMLHttpRequest(),
+            },
+          },
+          {
+            requirementId: 'b',
+            result: {
+              xhr: new XMLHttpRequest(),
+            },
+          },
+        ],
+        {
+          requirementId: 'c',
+          result: {
+            xhr: new XMLHttpRequest(),
+          },
+        },
+        2
+      )
+      expect(newCaches[0].requirementId).toBe('b')
+      expect(newCaches[1].requirementId).toBe('c')
     })
   })
 

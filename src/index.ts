@@ -38,7 +38,7 @@ export function sendHttpRequest(
 
 export type UseXhrRequirementId = number | string
 
-type UseXhrResultCache = {
+export type UseXhrResultCache = {
   requirementId: UseXhrRequirementId,
   result: {
     xhr: XMLHttpRequest,
@@ -56,6 +56,18 @@ function findResultCache(
     }
   }
   return undefined
+}
+
+export function recordResultCache(
+  resultCaches: UseXhrResultCache[],
+  appended: UseXhrResultCache,
+  maxNumber: number,
+): UseXhrResultCache[] {
+  let newResultCaches = resultCaches.concat([appended])
+  const extraNumber = newResultCaches.length > maxNumber
+    ? newResultCaches.length - maxNumber
+    : 0
+  return newResultCaches.slice(extraNumber, extraNumber + maxNumber)
 }
 
 export type UseXhrResult = {
@@ -147,12 +159,17 @@ export function useXhr(
                 reservedNewRequest: false,
                 resolvedRequirementId: unresolvedRequirementId,
                 response,
-                resultCaches: state.resultCaches.concat([{
-                  requirementId: unresolvedRequirementId,
-                  result: {
-                    xhr: response.xhr,
+                resultCaches: recordResultCache(
+                  state.resultCaches,
+                  {
+                    requirementId: unresolvedRequirementId,
+                    result: {
+                      xhr: response.xhr,
+                    },
                   },
-                }]),
+                  // TODO: Parameterize
+                  100,
+                )
               }
             }
             return current
