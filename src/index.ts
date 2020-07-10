@@ -91,8 +91,8 @@ const defaultUseXhrState: UseXhrState = {
 }
 
 export function useXhr(
-  requirementId: UseXhrRequirementId | undefined,
   requestData: SendHttpRequestData | undefined,
+  requirementId: UseXhrRequirementId | undefined,
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)

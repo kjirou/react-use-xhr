@@ -135,7 +135,7 @@ describe('src/index', () => {
 
       it('should throw an error if only requirementId is undefined', async () => {
         const Tester = () => {
-          useXhr(undefined, {httpMethod: 'GET', url: ''})
+          useXhr({httpMethod: 'GET', url: ''}, undefined)
           return React.createElement('div')
         }
         let error: any = undefined
@@ -152,7 +152,7 @@ describe('src/index', () => {
 
       it('should throw an error if only requestData is undefined', async () => {
         const Tester = () => {
-          useXhr('a', undefined)
+          useXhr(undefined, 'a')
           return React.createElement('div')
         }
         let error: any = undefined
@@ -183,11 +183,11 @@ describe('src/index', () => {
 
       it('should throw an error if requestData is changed in the same requirementId', async () => {
         const Tester: React.FC<{body: string}> = (props) => {
-          useXhr('a', {
+          useXhr({
             httpMethod: 'GET',
             url: '/foo',
             body: props.body,
-          })
+          }, 'a')
           return React.createElement('div')
         }
 
@@ -255,10 +255,10 @@ describe('src/index', () => {
         handleResult: (result: UseXhrResult) => void,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr('a', {
+        const result = useXhr({
           httpMethod: 'GET',
           url: '/foo',
-        })
+        }, 'a')
         props.handleResult(result)
         return React.createElement('div')
       }
@@ -298,7 +298,7 @@ describe('src/index', () => {
         requirementId: string | undefined,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requirementId, props.requestData)
+        const result = useXhr(props.requestData, props.requirementId)
         props.handleResult(result)
         return React.createElement('div')
       }
@@ -348,7 +348,7 @@ describe('src/index', () => {
         requirementId: string,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requirementId, props.requestData)
+        const result = useXhr(props.requestData, props.requirementId)
         props.handleResult(props.requirementId, result)
         return React.createElement('div')
       }
@@ -427,7 +427,7 @@ describe('src/index', () => {
         requirementId: string | undefined,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requirementId, props.requestData)
+        const result = useXhr(props.requestData, props.requirementId)
         props.handleResult(result)
         return React.createElement('div')
       }
