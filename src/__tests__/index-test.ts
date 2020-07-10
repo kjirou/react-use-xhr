@@ -3,12 +3,14 @@ import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import * as ReactTestRenderer from 'react-test-renderer'
 import * as sinon from 'sinon'
-import xhrMock, {delay} from 'xhr-mock'
+import xhrMock, {delay, sequence} from 'xhr-mock'
 
 import {
   HttpMethod,
   UseXhrResult,
+  UseXhrResultCache,
   SendHttpRequestData,
+  recordResultCache,
   sendHttpRequest,
   useXhr,
 } from '../index'
@@ -64,6 +66,57 @@ describe('src/index', () => {
           })
         })
       })
+    })
+  })
+
+  describe('recordResultCache', () => {
+    it('should append a new item to the last', function() {
+      const newCaches = recordResultCache(
+        [
+          {
+            requirementId: 'a',
+            result: {
+              xhr: new XMLHttpRequest(),
+            },
+          },
+        ],
+        {
+          requirementId: 'b',
+          result: {
+            xhr: new XMLHttpRequest(),
+          },
+        },
+        100
+      )
+      expect(newCaches[1].requirementId).toBe('b')
+    })
+
+    it('should remove an excess item from the first', function() {
+      const newCaches = recordResultCache(
+        [
+          {
+            requirementId: 'a',
+            result: {
+              xhr: new XMLHttpRequest(),
+            },
+          },
+          {
+            requirementId: 'b',
+            result: {
+              xhr: new XMLHttpRequest(),
+            },
+          },
+        ],
+        {
+          requirementId: 'c',
+          result: {
+            xhr: new XMLHttpRequest(),
+          },
+        },
+        2
+      )
+      expect(newCaches[0].requirementId).toBe('b')
+      expect(newCaches[1].requirementId).toBe('c')
     })
   })
 
@@ -288,7 +341,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when it sends and receives the 2nd request(="b") before resolving the first request(="a")', () => {
+    describe('when it sends and receives the 2nd request(="b") before resolving the 1st request(="a")', () => {
       type TesterProps = {
         handleResult: any,
         requestData: SendHttpRequestData,
@@ -364,6 +417,80 @@ describe('src/index', () => {
           }
           expect(call.args[1].isLoading).toBe(nextExpectedValue)
         }
+      })
+    })
+
+    describe('when sending requests in the order of "a" -> undefined -> "a"', () => {
+      type TesterProps = {
+        handleResult: any,
+        requestData: SendHttpRequestData | undefined,
+        requirementId: string | undefined,
+      }
+      const Tester: React.FC<TesterProps> = (props) => {
+        const result = useXhr(props.requirementId, props.requestData)
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+      let handleResult: TesterProps['handleResult']
+      let testRenderer: any = undefined
+
+      beforeEach(async () => {
+        xhrMock.get(
+          '/foo',
+          sequence([
+            {
+              status: 200,
+              body: 'FOO',
+            },
+            {
+              status: 200,
+              body: 'FOO2',
+            },
+          ])
+        )
+        handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          testRenderer = ReactTestRenderer.create(
+            React.createElement(Tester, {
+              requirementId: 'a',
+              requestData: {
+                httpMethod: 'GET',
+                url: '/foo',
+              },
+              handleResult,
+            }),
+          )
+        })
+        await ReactTestRenderer.act(async () => {
+          testRenderer.update(
+            React.createElement(Tester, {
+              requirementId: undefined,
+              requestData: undefined,
+              handleResult,
+            }),
+          )
+        })
+        await ReactTestRenderer.act(async () => {
+          testRenderer.update(
+            React.createElement(Tester, {
+              requirementId: 'a',
+              requestData: {
+                httpMethod: 'GET',
+                url: '/foo',
+              },
+              handleResult,
+            }),
+          )
+        })
+      })
+
+      describe('when to enable the cache', () => {
+        it('should return responseText="FOO" of the 1st at the last render', () => {
+          expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO')
+        })
+      })
+
+      describe('when to disable the cache', () => {
       })
     })
 
