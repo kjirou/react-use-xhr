@@ -185,7 +185,11 @@ describe('src/index', () => {
       })
     })
 
-    describe('should set both requirementId and requestData values at the same time', () => {
+    describe('when it receives only the argument of requirementId', () => {
+      const Tester = () => {
+        useXhr(undefined, {httpMethod: 'GET', url: ''})
+        return React.createElement('div')
+      }
       let originalConsoleError: any;
 
       beforeEach(() => {
@@ -197,11 +201,7 @@ describe('src/index', () => {
         console.error = originalConsoleError
       })
 
-      it('should throw an error if only requirementId is undefined', async () => {
-        const Tester = () => {
-          useXhr({httpMethod: 'GET', url: ''}, undefined)
-          return React.createElement('div')
-        }
+      it('should throw an error', async () => {
         let error: any = undefined
         try {
           await ReactTestRenderer.act(async () => {
@@ -211,24 +211,7 @@ describe('src/index', () => {
           error = err
         }
         expect(error).toBeInstanceOf(Error)
-        expect(error.message).toContain(' are not set ')
-      })
-
-      it('should throw an error if only requestData is undefined', async () => {
-        const Tester = () => {
-          useXhr(undefined, 'a')
-          return React.createElement('div')
-        }
-        let error: any = undefined
-        try {
-          await ReactTestRenderer.act(async () => {
-            ReactTestRenderer.create(React.createElement(Tester))
-          })
-        } catch (err) {
-          error = err
-        }
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toContain(' are not set ')
+        expect(error.message).toContain(' specify only ')
       })
     })
 

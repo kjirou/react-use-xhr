@@ -97,8 +97,7 @@ export function useXhr(
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)
   const invalidRequestData =
-    requirementId === undefined && requestData !== undefined ||
-    requirementId !== undefined && requestData === undefined
+    requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
     requirementId !== undefined &&
     areEqualAAndB(requirementId, state.unresolvedRequirementId) &&
@@ -114,7 +113,7 @@ export function useXhr(
     foundResultCache === undefined
 
   if (invalidRequestData) {
-    throw new Error('Both `requirementId` and `requestData` are not set at the same render.')
+    throw new Error('Can not specify only `requirementId`.')
   } else if (requestDataChangedIllegally) {
     throw new Error('Can not change the `requestData` associated with the `requirementId`.')
   }
