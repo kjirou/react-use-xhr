@@ -541,6 +541,122 @@ describe('src/index', () => {
       })
     })
 
+    describe('when it omits requirementId', () => {
+      type TesterProps = {
+        handleResult: any,
+        requestData: SendHttpRequestData,
+      }
+      const Tester: React.FC<TesterProps> = (props) => {
+        const result = useXhr(props.requestData)
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+
+      describe('when the value of requestData does not change', () => {
+        const requestData1: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+          body: 'a',
+        }
+        const requestData2: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+          body: 'a',
+        }
+        let handleResult: TesterProps['handleResult']
+        let testRenderer: any = undefined
+
+        beforeEach(async () => {
+          xhrMock.get(
+            '/foo',
+            sequence([
+              {
+                status: 200,
+                body: 'FOO1',
+              },
+              {
+                status: 200,
+                body: 'FOO2',
+              },
+            ])
+          )
+          handleResult = sinon.spy()
+          await ReactTestRenderer.act(async () => {
+            testRenderer = ReactTestRenderer.create(
+              React.createElement(Tester, {
+                requestData: requestData1,
+                handleResult,
+              }),
+            )
+          })
+          await ReactTestRenderer.act(async () => {
+            testRenderer.update(
+              React.createElement(Tester, {
+                requestData: requestData2,
+                handleResult,
+              }),
+            )
+          })
+        })
+
+        it('should return the first response at the last renderer', () => {
+          expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO1')
+        })
+      })
+
+      describe('when the value of requestData changes', () => {
+        const requestData1: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+          body: 'a',
+        }
+        const requestData2: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+          body: 'b',
+        }
+        let handleResult: TesterProps['handleResult']
+        let testRenderer: any = undefined
+
+        beforeEach(async () => {
+          xhrMock.get(
+            '/foo',
+            sequence([
+              {
+                status: 200,
+                body: 'FOO1',
+              },
+              {
+                status: 200,
+                body: 'FOO2',
+              },
+            ])
+          )
+          handleResult = sinon.spy()
+          await ReactTestRenderer.act(async () => {
+            testRenderer = ReactTestRenderer.create(
+              React.createElement(Tester, {
+                requestData: requestData1,
+                handleResult,
+              }),
+            )
+          })
+          await ReactTestRenderer.act(async () => {
+            testRenderer.update(
+              React.createElement(Tester, {
+                requestData: requestData2,
+                handleResult,
+              }),
+            )
+          })
+        })
+
+        it('should return the last response at the last renderer', () => {
+          expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO2')
+        })
+      })
+    })
+
     describe('when the hook is unmounted in request', () => {
       it.todo('should do nothing')
     })

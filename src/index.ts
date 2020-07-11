@@ -92,24 +92,26 @@ const defaultUseXhrState: UseXhrState = {
 
 export function useXhr(
   requestData: SendHttpRequestData | undefined,
-  requirementId: UseXhrRequirementId | undefined,
+  requirementId: UseXhrRequirementId | undefined = undefined,
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)
+  const fixedRequirementId: UseXhrRequirementId | undefined =
+    requirementId !== undefined ? requirementId : requestData
   const invalidRequestData =
     requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
-    requirementId !== undefined &&
-    areEqualAAndB(requirementId, state.unresolvedRequirementId) &&
+    fixedRequirementId !== undefined &&
+    areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
     !areEqualAAndB(requestData, state.unresolvedRequestData)
-  const foundResultCache = requirementId !== undefined
-    ? findResultCache(state.resultCaches, requirementId)
+  const foundResultCache = fixedRequirementId !== undefined
+    ? findResultCache(state.resultCaches, fixedRequirementId)
     : undefined
   const startNewRequest =
-    requirementId !== undefined &&
     requestData !== undefined &&
-    !areEqualAAndB(requirementId, state.unresolvedRequirementId) &&
-    !areEqualAAndB(requirementId, state.resolvedRequirementId) &&
+    fixedRequirementId !== undefined &&
+    !areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    !areEqualAAndB(fixedRequirementId, state.resolvedRequirementId) &&
     foundResultCache === undefined
 
   if (invalidRequestData) {
@@ -122,7 +124,7 @@ export function useXhr(
     // State Transition: 1
     setState({
       reservedNewRequest: true,
-      unresolvedRequirementId: requirementId,
+      unresolvedRequirementId: fixedRequirementId,
       unresolvedRequestData: requestData,
       resultCaches: state.resultCaches,
     })
@@ -181,7 +183,7 @@ export function useXhr(
   const result: UseXhrResult = {
     isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
-  if (requirementId !== undefined) {
+  if (fixedRequirementId !== undefined) {
     if (state.resolvedRequirementId !== undefined && state.response) {
       result.xhr = state.response.xhr
     } else if (foundResultCache !== undefined) {
