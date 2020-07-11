@@ -7,6 +7,7 @@ import xhrMock, {delay, sequence} from 'xhr-mock'
 
 import {
   HttpMethod,
+  UseXhrRequirementId,
   UseXhrResult,
   UseXhrResultCache,
   SendHttpRequestData,
@@ -121,6 +122,69 @@ describe('src/index', () => {
   })
 
   describe('useXhr', () => {
+    describe('when it passes the same value with different references to requirementId', () => {
+      const requestDataAndRequirementId1: SendHttpRequestData = {
+        httpMethod: 'GET',
+        url: '/foo',
+        body: 'a',
+      }
+      const requestDataAndRequirementId2: SendHttpRequestData = {
+        httpMethod: 'GET',
+        url: '/foo',
+        body: 'a',
+      }
+      type TesterProps = {
+        handleResult: any,
+        requestDataAndRequirementId: SendHttpRequestData,
+      }
+      const Tester: React.FC<TesterProps> = (props) => {
+        const result = useXhr(props.requestDataAndRequirementId, props.requestDataAndRequirementId)
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+      let handleResult: TesterProps['handleResult']
+      let testRenderer: any = undefined
+
+      beforeEach(async () => {
+        xhrMock.get(
+          '/foo',
+          sequence([
+            {
+              status: 200,
+              body: 'FOO1',
+            },
+            {
+              status: 200,
+              body: 'FOO2',
+            },
+          ])
+        )
+        handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          testRenderer = ReactTestRenderer.create(
+            React.createElement(Tester, {
+              requestDataAndRequirementId: requestDataAndRequirementId1,
+              handleResult,
+            }),
+          )
+        })
+        await ReactTestRenderer.act(async () => {
+          testRenderer.update(
+            React.createElement(Tester, {
+              requestDataAndRequirementId: requestDataAndRequirementId2,
+              handleResult,
+            }),
+          )
+          sleep(50)
+        })
+      })
+
+      it('should return the first response at the last render', async () => {
+        expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
+        expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO1')
+      })
+    })
+
     describe('should set both requirementId and requestData values at the same time', () => {
       let originalConsoleError: any;
 

@@ -36,7 +36,7 @@ export function sendHttpRequest(
   xhr.send(data.body !== undefined ? data.body : null)
 }
 
-export type UseXhrRequirementId = number | string
+export type UseXhrRequirementId = number | string | SendHttpRequestData
 
 export type UseXhrResultCache = {
   requirementId: UseXhrRequirementId,
@@ -51,7 +51,7 @@ function findResultCache(
 ): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
-    if (resultCache.requirementId === requirementId) {
+    if (areEqualAAndB(resultCache.requirementId, requirementId)) {
       return resultCache
     }
   }
@@ -101,7 +101,7 @@ export function useXhr(
     requirementId !== undefined && requestData === undefined
   const requestDataChangedIllegally =
     requirementId !== undefined &&
-    requirementId === state.unresolvedRequirementId &&
+    areEqualAAndB(requirementId, state.unresolvedRequirementId) &&
     !areEqualAAndB(requestData, state.unresolvedRequestData)
   const foundResultCache = requirementId !== undefined
     ? findResultCache(state.resultCaches, requirementId)
@@ -109,8 +109,8 @@ export function useXhr(
   const startNewRequest =
     requirementId !== undefined &&
     requestData !== undefined &&
-    requirementId !== state.unresolvedRequirementId &&
-    requirementId !== state.resolvedRequirementId &&
+    !areEqualAAndB(requirementId, state.unresolvedRequirementId) &&
+    !areEqualAAndB(requirementId, state.resolvedRequirementId) &&
     foundResultCache === undefined
 
   if (invalidRequestData) {
