@@ -36,7 +36,7 @@ export function sendHttpRequest(
   xhr.send(data.body !== undefined ? data.body : null)
 }
 
-export type UseXhrRequirementId = number | string
+export type UseXhrRequirementId = number | string | SendHttpRequestData
 
 export type UseXhrResultCache = {
   requirementId: UseXhrRequirementId,
@@ -51,7 +51,7 @@ function findResultCache(
 ): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
-    if (resultCache.requirementId === requirementId) {
+    if (areEqualAAndB(resultCache.requirementId, requirementId)) {
       return resultCache
     }
   }
@@ -91,30 +91,31 @@ const defaultUseXhrState: UseXhrState = {
 }
 
 export function useXhr(
-  requirementId: UseXhrRequirementId | undefined,
   requestData: SendHttpRequestData | undefined,
+  requirementId: UseXhrRequirementId | undefined = undefined,
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)
+  const fixedRequirementId: UseXhrRequirementId | undefined =
+    requirementId !== undefined ? requirementId : requestData
   const invalidRequestData =
-    requirementId === undefined && requestData !== undefined ||
-    requirementId !== undefined && requestData === undefined
+    requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
-    requirementId !== undefined &&
-    requirementId === state.unresolvedRequirementId &&
+    fixedRequirementId !== undefined &&
+    areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
     !areEqualAAndB(requestData, state.unresolvedRequestData)
-  const foundResultCache = requirementId !== undefined
-    ? findResultCache(state.resultCaches, requirementId)
+  const foundResultCache = fixedRequirementId !== undefined
+    ? findResultCache(state.resultCaches, fixedRequirementId)
     : undefined
   const startNewRequest =
-    requirementId !== undefined &&
     requestData !== undefined &&
-    requirementId !== state.unresolvedRequirementId &&
-    requirementId !== state.resolvedRequirementId &&
+    fixedRequirementId !== undefined &&
+    !areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    !areEqualAAndB(fixedRequirementId, state.resolvedRequirementId) &&
     foundResultCache === undefined
 
   if (invalidRequestData) {
-    throw new Error('Both `requirementId` and `requestData` are not set at the same render.')
+    throw new Error('Can not specify only `requirementId`.')
   } else if (requestDataChangedIllegally) {
     throw new Error('Can not change the `requestData` associated with the `requirementId`.')
   }
@@ -123,7 +124,7 @@ export function useXhr(
     // State Transition: 1
     setState({
       reservedNewRequest: true,
-      unresolvedRequirementId: requirementId,
+      unresolvedRequirementId: fixedRequirementId,
       unresolvedRequestData: requestData,
       resultCaches: state.resultCaches,
     })
@@ -182,7 +183,7 @@ export function useXhr(
   const result: UseXhrResult = {
     isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
-  if (requirementId !== undefined) {
+  if (fixedRequirementId !== undefined) {
     if (state.resolvedRequirementId !== undefined && state.response) {
       result.xhr = state.response.xhr
     } else if (foundResultCache !== undefined) {
