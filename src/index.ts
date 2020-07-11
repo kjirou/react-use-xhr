@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import isEqual = require('lodash.isequal')
 
-function areEqualAAndB(a: any, b: any): boolean {
+function areEquivalentAAndB(a: any, b: any): boolean {
   return isEqual(a, b)
 }
 
@@ -51,7 +51,7 @@ function findResultCache(
 ): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
-    if (areEqualAAndB(resultCache.requirementId, requirementId)) {
+    if (areEquivalentAAndB(resultCache.requirementId, requirementId)) {
       return resultCache
     }
   }
@@ -70,6 +70,10 @@ export function recordResultCache(
   return newResultCaches.slice(extraNumber, extraNumber + maxNumber)
 }
 
+type UseXhrOptions = {
+  maxResultCache?: number,
+}
+
 export type UseXhrResult = {
   isLoading: boolean,
   xhr?: XMLHttpRequest,
@@ -77,8 +81,6 @@ export type UseXhrResult = {
 
 type UseXhrState = {
   reservedNewRequest: boolean,
-  resolvedRequirementId?: UseXhrRequirementId | undefined,
-  response?: SendHttpRequestResult,
   // The old element is saved at the top. So-called last-in first-out.
   resultCaches: UseXhrResultCache[],
   unresolvedRequestData?: SendHttpRequestData,
@@ -93,28 +95,32 @@ const defaultUseXhrState: UseXhrState = {
 export function useXhr(
   requestData: SendHttpRequestData | undefined,
   requirementId: UseXhrRequirementId | undefined = undefined,
+  options: UseXhrOptions = {},
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)
+  const maxResultCache = options.maxResultCache !== undefined
+    ? options.maxResultCache : 100
   const fixedRequirementId: UseXhrRequirementId | undefined =
     requirementId !== undefined ? requirementId : requestData
   const invalidRequestData =
     requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
     fixedRequirementId !== undefined &&
-    areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
-    !areEqualAAndB(requestData, state.unresolvedRequestData)
+    areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    !areEquivalentAAndB(requestData, state.unresolvedRequestData)
   const foundResultCache = fixedRequirementId !== undefined
     ? findResultCache(state.resultCaches, fixedRequirementId)
     : undefined
   const startNewRequest =
     requestData !== undefined &&
     fixedRequirementId !== undefined &&
-    !areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
-    !areEqualAAndB(fixedRequirementId, state.resolvedRequirementId) &&
+    !areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
     foundResultCache === undefined
 
-  if (invalidRequestData) {
+  if (maxResultCache < 1) {
+    throw new Error('`maxResultCache` is less than 1.')
+  } else if (invalidRequestData) {
     throw new Error('Can not specify only `requirementId`.')
   } else if (requestDataChangedIllegally) {
     throw new Error('Can not change the `requestData` associated with the `requirementId`.')
@@ -158,8 +164,6 @@ export function useXhr(
               // TODO: Receive the error object too.
               return {
                 reservedNewRequest: false,
-                resolvedRequirementId: unresolvedRequirementId,
-                response,
                 resultCaches: recordResultCache(
                   state.resultCaches,
                   {
@@ -168,8 +172,7 @@ export function useXhr(
                       xhr: response.xhr,
                     },
                   },
-                  // TODO: Parameterize
-                  100,
+                  maxResultCache,
                 )
               }
             }
@@ -183,12 +186,8 @@ export function useXhr(
   const result: UseXhrResult = {
     isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
-  if (fixedRequirementId !== undefined) {
-    if (state.resolvedRequirementId !== undefined && state.response) {
-      result.xhr = state.response.xhr
-    } else if (foundResultCache !== undefined) {
-      result.xhr = foundResultCache.result.xhr
-    }
+  if (fixedRequirementId !== undefined && foundResultCache !== undefined) {
+    result.xhr = foundResultCache.result.xhr
   }
   return result
 }
