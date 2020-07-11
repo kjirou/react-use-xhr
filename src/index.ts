@@ -99,10 +99,10 @@ export function useXhr(
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)
-  const fixedRequirementId: UseXhrRequirementId | undefined =
-    requirementId !== undefined ? requirementId : requestData
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 100
+  const fixedRequirementId: UseXhrRequirementId | undefined =
+    requirementId !== undefined ? requirementId : requestData
   const invalidRequestData =
     requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
@@ -118,7 +118,9 @@ export function useXhr(
     !areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
     foundResultCache === undefined
 
-  if (invalidRequestData) {
+  if (maxResultCache < 1) {
+    throw new Error('`maxResultCache` is less than 1.')
+  } else if (invalidRequestData) {
     throw new Error('Can not specify only `requirementId`.')
   } else if (requestDataChangedIllegally) {
     throw new Error('Can not change the `requestData` associated with the `requirementId`.')

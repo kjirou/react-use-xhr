@@ -136,6 +136,36 @@ describe('src/index', () => {
   })
 
   describe('useXhr', () => {
+    describe('options.maxResultCache', () => {
+      let originalConsoleError: any;
+
+      beforeEach(() => {
+        originalConsoleError = console.error
+        // Hide React's Error Boundary output.
+        console.error = () => {}
+      })
+      afterEach(() => {
+        console.error = originalConsoleError
+      })
+
+      it('should throw an error if the value is less than 1', async () => {
+        const Tester: React.FC = () => {
+          useXhr(undefined, undefined, {maxResultCache: 0})
+          return React.createElement('div')
+        }
+        let error: any = undefined
+        try {
+          await ReactTestRenderer.act(async () => {
+            ReactTestRenderer.create(React.createElement(Tester))
+          })
+        } catch (err) {
+          error = err
+        }
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toContain('`maxResultCache`')
+      })
+    })
+
     describe('when it passes the same value with different references to requirementId', () => {
       const requestDataAndRequirementId1: SendHttpRequestData = {
         httpMethod: 'GET',
