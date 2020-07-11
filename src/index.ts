@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import isEqual = require('lodash.isequal')
 
-function areEqualAAndB(a: any, b: any): boolean {
+function areEquivalentAAndB(a: any, b: any): boolean {
   return isEqual(a, b)
 }
 
@@ -51,7 +51,7 @@ function findResultCache(
 ): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
-    if (areEqualAAndB(resultCache.requirementId, requirementId)) {
+    if (areEquivalentAAndB(resultCache.requirementId, requirementId)) {
       return resultCache
     }
   }
@@ -109,16 +109,16 @@ export function useXhr(
     requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
     fixedRequirementId !== undefined &&
-    areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
-    !areEqualAAndB(requestData, state.unresolvedRequestData)
+    areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    !areEquivalentAAndB(requestData, state.unresolvedRequestData)
   const foundResultCache = fixedRequirementId !== undefined
     ? findResultCache(state.resultCaches, fixedRequirementId)
     : undefined
   const startNewRequest =
     requestData !== undefined &&
     fixedRequirementId !== undefined &&
-    !areEqualAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
-    !areEqualAAndB(fixedRequirementId, state.resolvedRequirementId) &&
+    !areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    !areEquivalentAAndB(fixedRequirementId, state.resolvedRequirementId) &&
     foundResultCache === undefined
 
   if (invalidRequestData) {
