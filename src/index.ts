@@ -70,6 +70,10 @@ export function recordResultCache(
   return newResultCaches.slice(extraNumber, extraNumber + maxNumber)
 }
 
+type UseXhrOptions = {
+  maxResultCache?: number,
+}
+
 export type UseXhrResult = {
   isLoading: boolean,
   xhr?: XMLHttpRequest,
@@ -93,11 +97,14 @@ const defaultUseXhrState: UseXhrState = {
 export function useXhr(
   requestData: SendHttpRequestData | undefined,
   requirementId: UseXhrRequirementId | undefined = undefined,
+  options: UseXhrOptions = {},
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
   const unmountedRef = React.useRef(false)
   const fixedRequirementId: UseXhrRequirementId | undefined =
     requirementId !== undefined ? requirementId : requestData
+  const maxResultCache = options.maxResultCache !== undefined
+    ? options.maxResultCache : 100
   const invalidRequestData =
     requestData === undefined && requirementId !== undefined
   const requestDataChangedIllegally =
@@ -168,8 +175,7 @@ export function useXhr(
                       xhr: response.xhr,
                     },
                   },
-                  // TODO: Parameterize
-                  100,
+                  maxResultCache,
                 )
               }
             }
