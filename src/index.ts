@@ -190,10 +190,10 @@ export function useXhr(
     isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
   if (fixedRequirementId !== undefined) {
-    if (state.resolvedRequirementId !== undefined && state.response) {
-      result.xhr = state.response.xhr
-    } else if (foundResultCache !== undefined) {
+    if (foundResultCache !== undefined) {
       result.xhr = foundResultCache.result.xhr
+    } else if (state.resolvedRequirementId !== undefined && state.response) {
+      result.xhr = state.response.xhr
     }
   }
   return result

@@ -119,6 +119,20 @@ describe('src/index', () => {
       expect(newCaches[0].requirementId).toBe('b')
       expect(newCaches[1].requirementId).toBe('c')
     })
+
+    it('can not append any items if maxResultCache is 0', function() {
+      const newCaches = recordResultCache(
+        [],
+        {
+          requirementId: 'a',
+          result: {
+            xhr: new XMLHttpRequest(),
+          },
+        },
+        0,
+      )
+      expect(newCaches.length).toBe(0)
+    })
   })
 
   describe('useXhr', () => {
@@ -467,19 +481,62 @@ describe('src/index', () => {
       })
     })
 
-    describe('when sending requests in the order of "a" -> undefined -> "a"', () => {
+    describe('when it sends requests in the order of "a" -> "b" -> "a"', () => {
       type TesterProps = {
         handleResult: any,
+        maxResultCache: number,
         requestData: SendHttpRequestData | undefined,
         requirementId: string | undefined,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requestData, props.requirementId)
+        const result = useXhr(props.requestData, props.requirementId, {maxResultCache: props.maxResultCache})
         props.handleResult(result)
         return React.createElement('div')
       }
-      let handleResult: TesterProps['handleResult']
-      let testRenderer: any = undefined
+      const startRender = async (maxResultCache: number): Promise<{handleResult: any}> => {
+        const handleResult: TesterProps['handleResult'] = sinon.spy();
+        let testRenderer: any = undefined
+        await ReactTestRenderer.act(async () => {
+          testRenderer = ReactTestRenderer.create(
+            React.createElement(Tester, {
+              requestData: {
+                httpMethod: 'GET',
+                url: '/foo',
+              },
+              requirementId: 'a',
+              handleResult,
+              maxResultCache,
+            }),
+          )
+        })
+        await ReactTestRenderer.act(async () => {
+          testRenderer.update(
+            React.createElement(Tester, {
+              requestData: {
+                httpMethod: 'GET',
+                url: '/bar',
+              },
+              requirementId: 'b',
+              handleResult,
+              maxResultCache,
+            }),
+          )
+        })
+        await ReactTestRenderer.act(async () => {
+          testRenderer.update(
+            React.createElement(Tester, {
+              requestData: {
+                httpMethod: 'GET',
+                url: '/foo',
+              },
+              requirementId: 'a',
+              handleResult,
+              maxResultCache,
+            }),
+          )
+        })
+        return {handleResult}
+      }
 
       beforeEach(async () => {
         xhrMock.get(
@@ -487,7 +544,7 @@ describe('src/index', () => {
           sequence([
             {
               status: 200,
-              body: 'FOO',
+              body: 'FOO1',
             },
             {
               status: 200,
@@ -495,49 +552,39 @@ describe('src/index', () => {
             },
           ])
         )
-        handleResult = sinon.spy()
-        await ReactTestRenderer.act(async () => {
-          testRenderer = ReactTestRenderer.create(
-            React.createElement(Tester, {
-              requirementId: 'a',
-              requestData: {
-                httpMethod: 'GET',
-                url: '/foo',
-              },
-              handleResult,
-            }),
-          )
-        })
-        await ReactTestRenderer.act(async () => {
-          testRenderer.update(
-            React.createElement(Tester, {
-              requirementId: undefined,
-              requestData: undefined,
-              handleResult,
-            }),
-          )
-        })
-        await ReactTestRenderer.act(async () => {
-          testRenderer.update(
-            React.createElement(Tester, {
-              requirementId: 'a',
-              requestData: {
-                httpMethod: 'GET',
-                url: '/foo',
-              },
-              handleResult,
-            }),
-          )
-        })
+        xhrMock.get(
+          '/bar',
+          {
+            status: 200,
+            body: 'BAR',
+          },
+        )
       })
 
       describe('when to enable the cache', () => {
-        it('should return responseText="FOO" of the 1st at the last render', () => {
-          expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO')
+        let handleResult: any;
+
+        beforeEach(async () => {
+          const result = await startRender(2)
+          handleResult = result.handleResult
+        })
+
+        it('should return responseText="FOO1" of the first response at the last render', () => {
+          expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO1')
         })
       })
 
       describe('when to disable the cache', () => {
+        let handleResult: any;
+
+        beforeEach(async () => {
+          const result = await startRender(0)
+          handleResult = result.handleResult
+        })
+
+        it('should return responseText="FOO2" of the last response at the last render', () => {
+          expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO2')
+        })
       })
     })
 
