@@ -561,7 +561,7 @@ describe('src/index', () => {
         )
       })
 
-      describe('when to enable the cache', () => {
+      describe('when it can save two responses', () => {
         let handleResult: any;
 
         beforeEach(async () => {
@@ -574,11 +574,11 @@ describe('src/index', () => {
         })
       })
 
-      describe('when to disable the cache', () => {
+      describe('when it can not save two responses', () => {
         let handleResult: any;
 
         beforeEach(async () => {
-          const result = await startRender(0)
+          const result = await startRender(1)
           handleResult = result.handleResult
         })
 

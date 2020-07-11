@@ -81,8 +81,6 @@ export type UseXhrResult = {
 
 type UseXhrState = {
   reservedNewRequest: boolean,
-  resolvedRequirementId?: UseXhrRequirementId | undefined,
-  response?: SendHttpRequestResult,
   // The old element is saved at the top. So-called last-in first-out.
   resultCaches: UseXhrResultCache[],
   unresolvedRequestData?: SendHttpRequestData,
@@ -118,7 +116,6 @@ export function useXhr(
     requestData !== undefined &&
     fixedRequirementId !== undefined &&
     !areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
-    !areEquivalentAAndB(fixedRequirementId, state.resolvedRequirementId) &&
     foundResultCache === undefined
 
   if (invalidRequestData) {
@@ -165,8 +162,6 @@ export function useXhr(
               // TODO: Receive the error object too.
               return {
                 reservedNewRequest: false,
-                resolvedRequirementId: unresolvedRequirementId,
-                response,
                 resultCaches: recordResultCache(
                   state.resultCaches,
                   {
@@ -189,12 +184,8 @@ export function useXhr(
   const result: UseXhrResult = {
     isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
   }
-  if (fixedRequirementId !== undefined) {
-    if (foundResultCache !== undefined) {
-      result.xhr = foundResultCache.result.xhr
-    } else if (state.resolvedRequirementId !== undefined && state.response) {
-      result.xhr = state.response.xhr
-    }
+  if (fixedRequirementId !== undefined && foundResultCache !== undefined) {
+    result.xhr = foundResultCache.result.xhr
   }
   return result
 }
