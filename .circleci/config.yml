@@ -1,14 +1,16 @@
 version: 2.1
+executors:
+  my-node-v12:
+    docker:
+      - image: circleci/node:12.18.2
 orbs:
   node: circleci/node@3.0.1
 jobs:
   build-and-test:
     executor:
-      name: node/default
+      name: my-node-v12
     steps:
       - checkout
-      - node/install:
-          node-version: 12.18.2
       - run: node --version
       - run: npm --version
       - node/install-packages
