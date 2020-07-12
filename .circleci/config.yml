@@ -11,7 +11,7 @@ jobs:
           node-version: 12.18.2
       - run: node --version
       - run: npm --version
-      - run: npm install
+      - node/install-packages
       - run: npm run type-check
       - run: npm test
 workflows:
