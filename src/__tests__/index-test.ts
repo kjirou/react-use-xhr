@@ -62,7 +62,7 @@ describe('src/index', () => {
         {httpMethod: 'DELETE'},
       ]
       testCases.forEach(({httpMethod}) => {
-        describe(`${httpMethod}`, () => {
+        describe(`when it succeeded ${httpMethod} request`, () => {
           const requestData = {
             httpMethod,
             url: '/foo',
@@ -76,13 +76,55 @@ describe('src/index', () => {
           })
 
           it('can receive xhr instance', (done) => {
-            sendHttpRequest(requestData, (error_, response) => {
-              expect(response.xhr).toBeInstanceOf(XMLHttpRequest)
-              expect(response.xhr.status).toBe(200)
-              expect(response.xhr.responseText).toBe('BAR')
-              done();
+            sendHttpRequest(requestData, (error_, result) => {
+              expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
+              expect(result.xhr.status).toBe(200)
+              expect(result.xhr.responseText).toBe('BAR')
+              done()
             })
           })
+
+          it('should not return any error', (done) => {
+            sendHttpRequest(requestData, (error, result_) => {
+              expect(error).toBe(null)
+              done()
+            })
+          })
+        })
+      })
+    })
+
+    describe('event handling', () => {
+      describe('when it received "abort" event', () => {
+        const requestData: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+        }
+
+        beforeEach(() => {
+          xhrMock.get('/foo', () => new Promise(() => {}))
+        })
+
+        it('should return an error', (done) => {
+          const xhr = sendHttpRequest(requestData, (error, result_) => {
+            expect(error).toBeInstanceOf(Error)
+            expect(error?.message).toContain(' XHR error ')
+            done()
+          })
+          setTimeout(() => {
+            xhr.abort()
+          }, 1)
+        })
+
+        it('should return at least one abort event', (done) => {
+          const xhr = sendHttpRequest(requestData, (error_, result) => {
+            expect(result.events.length).toBeGreaterThan(0)
+            expect(result.events.some((event) => event.type === 'abort')).toBe(true)
+            done()
+          })
+          setTimeout(() => {
+            xhr.abort()
+          }, 1)
         })
       })
     })
