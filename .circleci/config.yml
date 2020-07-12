@@ -3,12 +3,25 @@ executors:
   my-node-v12:
     docker:
       - image: circleci/node:12.18.2
+  my-node-v10:
+    docker:
+      - image: circleci/node:10.19.0
 orbs:
   node: circleci/node@3.0.1
 jobs:
-  build-and-test:
+  build-and-test-on-node-v12:
     executor:
       name: my-node-v12
+    steps:
+      - checkout
+      - run: node --version
+      - run: npm --version
+      - node/install-packages
+      - run: npm run type-check
+      - run: npm test
+  build-and-test-on-node-v10:
+    executor:
+      name: my-node-v10
     steps:
       - checkout
       - run: node --version
@@ -19,4 +32,5 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - build-and-test
+      - build-and-test-on-node-v12
+      - build-and-test-on-node-v10
