@@ -256,6 +256,11 @@ describe('src/index', () => {
       })
     })
 
+    describe('options.timeout', () => {
+      // Omit it, because it is not easy to write and probably can be verified by other tests.
+      it.todo('should be passed to sendHttpRequest')
+    })
+
     describe('when it passes the same value with different references to requirementId', () => {
       const requestDataAndRequirementId1: SendHttpRequestData = {
         httpMethod: 'GET',

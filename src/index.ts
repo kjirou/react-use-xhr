@@ -111,6 +111,15 @@ export function recordResultCache(
 
 type UseXhrOptions = {
   maxResultCache?: number,
+  timeout?: SendHttpRequestOptions['timeout'],
+}
+
+function deriveSendHttpRequestOptions(useXhrOptions: UseXhrOptions): SendHttpRequestOptions {
+  const result: SendHttpRequestOptions = {}
+  if (useXhrOptions.timeout !== undefined) {
+    result.timeout = useXhrOptions.timeout
+  }
+  return result
 }
 
 export type UseXhrResult = {
@@ -140,6 +149,7 @@ export function useXhr(
   const unmountedRef = React.useRef(false)
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 100
+  const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
   const fixedRequirementId: UseXhrRequirementId | undefined =
     requirementId !== undefined ? requirementId : requestData
   const invalidRequestData =
@@ -191,34 +201,38 @@ export function useXhr(
         resultCaches: state.resultCaches,
       })
 
-      sendHttpRequest(state.unresolvedRequestData as SendHttpRequestData, function(error_, response) {
-        if (!unmountedRef.current) {
-          // State Transition: 3
-          setState(function(current) {
-            const unresolvedRequirementId = current.unresolvedRequirementId;
-            if (
-              unresolvedRequirementId !== undefined &&
-              state.unresolvedRequirementId === unresolvedRequirementId
-            ) {
-              // TODO: Receive the error object too.
-              return {
-                reservedNewRequest: false,
-                resultCaches: recordResultCache(
-                  state.resultCaches,
-                  {
-                    requirementId: unresolvedRequirementId,
-                    result: {
-                      xhr: response.xhr,
+      sendHttpRequest(
+        state.unresolvedRequestData as SendHttpRequestData,
+        function(error_, response) {
+          if (!unmountedRef.current) {
+            // State Transition: 3
+            setState(function(current) {
+              const unresolvedRequirementId = current.unresolvedRequirementId;
+              if (
+                unresolvedRequirementId !== undefined &&
+                state.unresolvedRequirementId === unresolvedRequirementId
+              ) {
+                // TODO: Receive the error object too.
+                return {
+                  reservedNewRequest: false,
+                  resultCaches: recordResultCache(
+                    state.resultCaches,
+                    {
+                      requirementId: unresolvedRequirementId,
+                      result: {
+                        xhr: response.xhr,
+                      },
                     },
-                  },
-                  maxResultCache,
-                )
+                    maxResultCache,
+                  )
+                }
               }
-            }
-            return current
-          })
-        }
-      })
+              return current
+            })
+          }
+        },
+        sendHttpRequestOptions,
+      )
     }
   })
 
