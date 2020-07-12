@@ -7,10 +7,6 @@ import {
   sendHttpRequest,
 } from '../utils'
 
-const sleep = (time: number): Promise<void> => {
-  return new Promise((resolve) => {setTimeout(resolve, time)})
-}
-
 describe('src/utils', () => {
   describe('sendHttpRequest', () => {
     beforeEach(() => {

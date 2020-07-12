@@ -192,7 +192,6 @@ describe('src/index', () => {
               handleResult,
             }),
           )
-          sleep(50)
         })
       })
 
@@ -300,7 +299,6 @@ describe('src/index', () => {
             React.createElement(Tester, {handleResult}),
           )
         })
-        await sleep(50)
       })
 
       it('should return isLoading=false without any xhr instance at the first render', () => {
@@ -339,7 +337,6 @@ describe('src/index', () => {
             React.createElement(Tester, {handleResult}),
           )
         })
-        await sleep(50)
       })
 
       it('should return isLoading=true without any property at the first render', () => {
@@ -411,7 +408,6 @@ describe('src/index', () => {
             }),
           )
         })
-        await sleep(50)
       })
 
       it('should return isLoading=false and xhr=undefined at the last render', () => {
