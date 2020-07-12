@@ -33,6 +33,24 @@ describe('src/index', () => {
   })
 
   describe('sendHttpRequest', () => {
+    it('can set http headers', (done) => {
+      xhrMock.get('/foo', (req, res) => {
+        expect(req.header('X-Foo')).toBe('Fooo')
+        return res.status(200)
+      })
+
+      sendHttpRequest(
+        {
+          httpMethod: 'GET',
+          url: '/foo',
+          headers: {
+            'X-Foo': 'Fooo',
+          },
+        },
+        (error_, result_) => {done()}
+      )
+    })
+
     describe('can perform standard operations for each http-method', () => {
       const testCases: {
         httpMethod: HttpMethod,
