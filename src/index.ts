@@ -4,8 +4,8 @@ import {
   SendHttpRequestData,
   SendHttpRequestOptions,
   SendHttpRequestResult,
-  areEquivalentAAndB,
   appendItemAsLastInFirstOut,
+  areEquivalentAAndB,
   sendHttpRequest,
 } from './utils'
 
