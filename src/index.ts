@@ -80,7 +80,9 @@ export type UseXhrRequirementId = number | string | SendHttpRequestData
 export type UseXhrResultCache = {
   requirementId: UseXhrRequirementId,
   result: {
-    xhr: XMLHttpRequest,
+    error?: Error,
+    events: SendHttpRequestResult['events'],
+    xhr: SendHttpRequestResult['xhr'],
   },
 }
 
@@ -123,8 +125,10 @@ function deriveSendHttpRequestOptions(useXhrOptions: UseXhrOptions): SendHttpReq
 }
 
 export type UseXhrResult = {
+  error?: Error,
+  events?: SendHttpRequestResult['events'],
   isLoading: boolean,
-  xhr?: XMLHttpRequest,
+  xhr?: SendHttpRequestResult['xhr'],
 }
 
 type UseXhrState = {
@@ -203,7 +207,7 @@ export function useXhr(
 
       sendHttpRequest(
         state.unresolvedRequestData as SendHttpRequestData,
-        function(error_, response) {
+        function(error, requestResult) {
           if (!unmountedRef.current) {
             // State Transition: 3
             setState(function(current) {
@@ -212,19 +216,19 @@ export function useXhr(
                 unresolvedRequirementId !== undefined &&
                 state.unresolvedRequirementId === unresolvedRequirementId
               ) {
-                // TODO: Receive the error object too.
+                const resultCache: UseXhrResultCache = {
+                  requirementId: unresolvedRequirementId,
+                  result: {
+                    xhr: requestResult.xhr,
+                    events: requestResult.events,
+                  },
+                }
+                if (error) {
+                  resultCache.result.error = error
+                }
                 return {
                   reservedNewRequest: false,
-                  resultCaches: recordResultCache(
-                    state.resultCaches,
-                    {
-                      requirementId: unresolvedRequirementId,
-                      result: {
-                        xhr: response.xhr,
-                      },
-                    },
-                    maxResultCache,
-                  )
+                  resultCaches: recordResultCache(state.resultCaches, resultCache, maxResultCache)
                 }
               }
               return current
@@ -241,6 +245,10 @@ export function useXhr(
   }
   if (fixedRequirementId !== undefined && foundResultCache !== undefined) {
     result.xhr = foundResultCache.result.xhr
+    result.events = foundResultCache.result.events
+    if (foundResultCache.result.error) {
+      result.error = foundResultCache.result.error
+    }
   }
   return result
 }

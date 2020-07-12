@@ -168,6 +168,7 @@ describe('src/index', () => {
             requirementId: 'a',
             result: {
               xhr: new XMLHttpRequest(),
+              events: [],
             },
           },
         ],
@@ -175,6 +176,7 @@ describe('src/index', () => {
           requirementId: 'b',
           result: {
             xhr: new XMLHttpRequest(),
+            events: [],
           },
         },
         100
@@ -189,12 +191,14 @@ describe('src/index', () => {
             requirementId: 'a',
             result: {
               xhr: new XMLHttpRequest(),
+              events: [],
             },
           },
           {
             requirementId: 'b',
             result: {
               xhr: new XMLHttpRequest(),
+              events: [],
             },
           },
         ],
@@ -202,6 +206,7 @@ describe('src/index', () => {
           requirementId: 'c',
           result: {
             xhr: new XMLHttpRequest(),
+            events: [],
           },
         },
         2
@@ -217,6 +222,7 @@ describe('src/index', () => {
           requirementId: 'a',
           result: {
             xhr: new XMLHttpRequest(),
+            events: [],
           },
         },
         0,
@@ -400,7 +406,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when requirementId and requestData are always undefined', () => {
+    describe('when requestData and requirementId are always undefined', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
@@ -436,7 +442,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when requirementId and requestData are always the same', () => {
+    describe('when requestData and requirementId are always the same', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
@@ -464,16 +470,31 @@ describe('src/index', () => {
         await sleep(50)
       })
 
-      it('should return isLoading=true without any xhr instance at the first render', () => {
+      it('should return isLoading=true without any property at the first render', () => {
         expect(handleResult.firstCall.args[0].isLoading).toBe(true)
-        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+        expect(handleResult.firstCall.args[0]).not.toHaveProperty('xhr')
+        expect(handleResult.firstCall.args[0]).not.toHaveProperty('events')
+        expect(handleResult.firstCall.args[0]).not.toHaveProperty('error')
       })
 
-      it('should return isLoading=false with a xhr instance at the last render', () => {
+      it('should return isLoading=false at the last render', () => {
         expect(handleResult.lastCall.args[0].isLoading).toBe(false)
+      })
+
+      it('should return a xhr instance at the last render', () => {
         expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
         expect(handleResult.lastCall.args[0].xhr.status).toBe(200)
         expect(handleResult.lastCall.args[0].xhr.responseText).toBe('BAR')
+      })
+
+      it('should include "loadend" event to the end of the events at the last render', () => {
+        const events = handleResult.lastCall.args[0].events
+        const lastEvent = events[events.length - 1]
+        expect(lastEvent.type).toBe('loadend')
+      })
+
+      it('should return without any error at the last render', () => {
+        expect(handleResult.lastCall.args[0]).not.toHaveProperty('error')
       })
     })
 
@@ -826,6 +847,35 @@ describe('src/index', () => {
         it('should return the last response at the last renderer', () => {
           expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO2')
         })
+      })
+    })
+
+    describe('when the request it sent times out', () => {
+      const Tester: React.FC<{handleResult: any}> = (props) => {
+        const result = useXhr({httpMethod: 'GET', url: '/foo'}, undefined, {timeout: 1})
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+      let handleResult: any
+
+      beforeEach(async () => {
+        xhrMock.get('/foo', () => new Promise(() => {}))
+
+        handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+          await sleep(50)
+        })
+      })
+
+      it('should include "timeout" event in the result at the last render', () => {
+        expect(handleResult.lastCall.args[0].events.some((e: any) => e.type === 'timeout')).toBe(true)
+      })
+
+      it('should have an error in the result at the last render', () => {
+        expect(handleResult.lastCall.args[0].error).toBeInstanceOf(Error)
       })
     })
 
