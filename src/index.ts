@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import {
-  HttpMethod,
   SendHttpRequestData,
   SendHttpRequestOptions,
   SendHttpRequestResult,

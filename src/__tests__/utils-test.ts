@@ -2,8 +2,8 @@ import * as sinon from 'sinon'
 import xhrMock, {delay, sequence} from 'xhr-mock'
 
 import {
-  HttpMethod,
   SendHttpRequestData,
+  SendHttpRequestHttpMethod,
   sendHttpRequest,
 } from '../utils'
 
@@ -40,7 +40,7 @@ describe('src/utils', () => {
 
     describe('can perform standard operations for each http-method', () => {
       const testCases: {
-        httpMethod: HttpMethod,
+        httpMethod: SendHttpRequestHttpMethod,
       }[] = [
         {httpMethod: 'GET'},
         {httpMethod: 'POST'},

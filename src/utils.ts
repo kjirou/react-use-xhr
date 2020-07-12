@@ -4,12 +4,12 @@ export function areEquivalentAAndB(a: any, b: any): boolean {
   return isEqual(a, b)
 }
 
-export type HttpMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT'
+export type SendHttpRequestHttpMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT'
 
 export type SendHttpRequestData = {
   body?: string,
   headers?: {[key in string]: string},
-  httpMethod: HttpMethod,
+  httpMethod: SendHttpRequestHttpMethod,
   url: string,
 }
 
