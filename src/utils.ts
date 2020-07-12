@@ -4,6 +4,16 @@ export function areEquivalentAAndB(a: any, b: any): boolean {
   return isEqual(a, b)
 }
 
+export function appendItemAsLastInFirstOut<Item>(
+  list: Item[], appended: Item, maxNumber: number
+): Item[] {
+  const newItems = list.concat([appended])
+  const extraNumber = newItems.length > maxNumber
+    ? newItems.length - maxNumber
+    : 0
+  return newItems.slice(extraNumber, extraNumber + maxNumber)
+}
+
 export type SendHttpRequestHttpMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT'
 
 export type SendHttpRequestData = {

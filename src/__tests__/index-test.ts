@@ -9,7 +9,6 @@ import {
   UseXhrRequirementId,
   UseXhrResult,
   UseXhrResultCache,
-  recordResultCache,
   useXhr,
 } from '../index'
 import {
@@ -30,77 +29,6 @@ describe('src/index', () => {
     delete global.window
     delete global.document
     xhrMock.teardown()
-  })
-
-  describe('recordResultCache', () => {
-    it('should append a new item to the last', function() {
-      const newCaches = recordResultCache(
-        [
-          {
-            requirementId: 'a',
-            result: {
-              xhr: new XMLHttpRequest(),
-              events: [],
-            },
-          },
-        ],
-        {
-          requirementId: 'b',
-          result: {
-            xhr: new XMLHttpRequest(),
-            events: [],
-          },
-        },
-        100
-      )
-      expect(newCaches[1].requirementId).toBe('b')
-    })
-
-    it('should remove an excess item from the first', function() {
-      const newCaches = recordResultCache(
-        [
-          {
-            requirementId: 'a',
-            result: {
-              xhr: new XMLHttpRequest(),
-              events: [],
-            },
-          },
-          {
-            requirementId: 'b',
-            result: {
-              xhr: new XMLHttpRequest(),
-              events: [],
-            },
-          },
-        ],
-        {
-          requirementId: 'c',
-          result: {
-            xhr: new XMLHttpRequest(),
-            events: [],
-          },
-        },
-        2
-      )
-      expect(newCaches[0].requirementId).toBe('b')
-      expect(newCaches[1].requirementId).toBe('c')
-    })
-
-    it('can not append any items if maxResultCache is 0', function() {
-      const newCaches = recordResultCache(
-        [],
-        {
-          requirementId: 'a',
-          result: {
-            xhr: new XMLHttpRequest(),
-            events: [],
-          },
-        },
-        0,
-      )
-      expect(newCaches.length).toBe(0)
-    })
   })
 
   describe('useXhr', () => {

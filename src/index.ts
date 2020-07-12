@@ -5,6 +5,7 @@ import {
   SendHttpRequestOptions,
   SendHttpRequestResult,
   areEquivalentAAndB,
+  appendItemAsLastInFirstOut,
   sendHttpRequest,
 } from './utils'
 
@@ -30,18 +31,6 @@ function findResultCache(
     }
   }
   return undefined
-}
-
-export function recordResultCache(
-  resultCaches: UseXhrResultCache[],
-  appended: UseXhrResultCache,
-  maxNumber: number,
-): UseXhrResultCache[] {
-  let newResultCaches = resultCaches.concat([appended])
-  const extraNumber = newResultCaches.length > maxNumber
-    ? newResultCaches.length - maxNumber
-    : 0
-  return newResultCaches.slice(extraNumber, extraNumber + maxNumber)
 }
 
 type UseXhrOptions = {
@@ -159,7 +148,8 @@ export function useXhr(
                 }
                 return {
                   reservedNewRequest: false,
-                  resultCaches: recordResultCache(state.resultCaches, resultCache, maxResultCache)
+                  resultCaches: appendItemAsLastInFirstOut<UseXhrResultCache>(
+                    state.resultCaches, resultCache, maxResultCache)
                 }
               }
               return current

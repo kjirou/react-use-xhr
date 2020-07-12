@@ -4,10 +4,29 @@ import xhrMock, {delay, sequence} from 'xhr-mock'
 import {
   SendHttpRequestData,
   SendHttpRequestHttpMethod,
+  appendItemAsLastInFirstOut,
   sendHttpRequest,
 } from '../utils'
 
 describe('src/utils', () => {
+  describe('appendItemAsLastInFirstOut', () => {
+    it('should append a new item to the last', function() {
+      const items = appendItemAsLastInFirstOut<string>(['a'], 'b', 100)
+      expect(items[1]).toBe('b')
+    })
+
+    it('should remove an excess item from the first', function() {
+      const items = appendItemAsLastInFirstOut<number>([11, 22], 33, 2)
+      expect(items[0]).toBe(22)
+      expect(items[1]).toBe(33)
+    })
+
+    it('can not append any items if maxResultCache is 0', function() {
+      const items = appendItemAsLastInFirstOut<string>([], 'a', 0)
+      expect(items.length).toBe(0)
+    })
+  })
+
   describe('sendHttpRequest', () => {
     beforeEach(() => {
       xhrMock.setup()
