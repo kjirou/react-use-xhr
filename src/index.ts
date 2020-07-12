@@ -72,17 +72,15 @@ type UseXhrState = {
   unresolvedRequirementId?: UseXhrRequirementId | undefined,
 }
 
-const defaultUseXhrState: UseXhrState = {
-  reservedNewRequest: false,
-  resultCaches: [],
-}
-
 export function useXhr(
   requestData: SendHttpRequestData | undefined,
   requirementId: UseXhrRequirementId | undefined = undefined,
   options: UseXhrOptions = {},
 ): UseXhrResult {
-  const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
+  const [state, setState] = React.useState<UseXhrState>({
+    reservedNewRequest: false,
+    resultCaches: [],
+  })
   const unmountedRef = React.useRef(false)
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 100
