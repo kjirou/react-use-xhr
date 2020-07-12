@@ -139,7 +139,7 @@ describe('src/index', () => {
       it.todo('should be passed to sendHttpRequest')
     })
 
-    describe('when it passes the same value with different references to requirementId', () => {
+    describe('when it passes equivalent values with different references to requirementId', () => {
       const requestDataAndRequirementId1: SendHttpRequestData = {
         httpMethod: 'GET',
         url: '/foo',
