@@ -21,12 +21,12 @@ export type SendHttpRequestResult = {
 
 export function sendHttpRequest(
   data: SendHttpRequestData,
-  callback: (error: Error | null, result: SendHttpRequestResult) => void,
+  afterLoadend: (error: Error | null, result: SendHttpRequestResult) => void,
 ): void {
   const xhr = new XMLHttpRequest()
-  xhr.onload = function() {
+  xhr.onloadend = function() {
     // TODO: Error handling.
-    callback(null, {xhr})
+    afterLoadend(null, {xhr})
   }
   xhr.open(data.httpMethod, data.url)
   const headers = data.headers || {}
