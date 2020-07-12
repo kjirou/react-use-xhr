@@ -15,25 +15,64 @@ export type SendHttpRequestData = {
   url: string,
 }
 
+export type SendHttpRequestOptions = {
+  timeout?: number,
+}
+
 export type SendHttpRequestResult = {
+  events: ProgressEvent[],
   xhr: XMLHttpRequest,
 }
 
 export function sendHttpRequest(
   data: SendHttpRequestData,
-  callback: (error: Error | null, result: SendHttpRequestResult) => void,
-): void {
+  handleFinishLoadend: (error: Error | null, result: SendHttpRequestResult) => void,
+  options: SendHttpRequestOptions = {},
+): XMLHttpRequest {
+  const timeout: number | undefined = options.timeout !== undefined ? options.timeout : undefined
   const xhr = new XMLHttpRequest()
-  xhr.onload = function() {
-    // TODO: Error handling.
-    callback(null, {xhr})
+  const result: SendHttpRequestResult = {
+    xhr,
+    events: [],
+  }
+  xhr.onloadend = function(event: ProgressEvent) {
+    result.events.push(event)
+    const error: Error | null =
+      result.events.some(function(event) {
+        return ['abort', 'error', 'timeout'].indexOf(event.type) !== -1
+      })
+      ? new Error('Some XHR error has occurred.')
+      : null
+    handleFinishLoadend(error, result)
+  }
+  xhr.onloadstart = function(event: ProgressEvent) {
+    result.events.push(event)
+  }
+  xhr.onabort = function(event: ProgressEvent) {
+    result.events.push(event)
+  }
+  xhr.onerror = function(event: ProgressEvent) {
+    result.events.push(event)
+  }
+  xhr.onprogress = function(event: ProgressEvent) {
+    result.events.push(event)
+  }
+  xhr.onload = function(event: ProgressEvent) {
+    result.events.push(event)
+  }
+  xhr.ontimeout = function(event: ProgressEvent) {
+    result.events.push(event)
   }
   xhr.open(data.httpMethod, data.url)
   const headers = data.headers || {}
   Object.keys(headers).sort().forEach(function(key) {
     xhr.setRequestHeader(key, headers[key])
   })
+  if (timeout !== undefined) {
+    xhr.timeout = timeout
+  }
   xhr.send(data.body !== undefined ? data.body : null)
+  return xhr
 }
 
 export type UseXhrRequirementId = number | string | SendHttpRequestData
@@ -41,7 +80,9 @@ export type UseXhrRequirementId = number | string | SendHttpRequestData
 export type UseXhrResultCache = {
   requirementId: UseXhrRequirementId,
   result: {
-    xhr: XMLHttpRequest,
+    error?: Error,
+    events: SendHttpRequestResult['events'],
+    xhr: SendHttpRequestResult['xhr'],
   },
 }
 
@@ -72,11 +113,22 @@ export function recordResultCache(
 
 type UseXhrOptions = {
   maxResultCache?: number,
+  timeout?: SendHttpRequestOptions['timeout'],
+}
+
+function deriveSendHttpRequestOptions(useXhrOptions: UseXhrOptions): SendHttpRequestOptions {
+  const result: SendHttpRequestOptions = {}
+  if (useXhrOptions.timeout !== undefined) {
+    result.timeout = useXhrOptions.timeout
+  }
+  return result
 }
 
 export type UseXhrResult = {
+  error?: Error,
+  events?: SendHttpRequestResult['events'],
   isLoading: boolean,
-  xhr?: XMLHttpRequest,
+  xhr?: SendHttpRequestResult['xhr'],
 }
 
 type UseXhrState = {
@@ -101,6 +153,7 @@ export function useXhr(
   const unmountedRef = React.useRef(false)
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 100
+  const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
   const fixedRequirementId: UseXhrRequirementId | undefined =
     requirementId !== undefined ? requirementId : requestData
   const invalidRequestData =
@@ -152,34 +205,38 @@ export function useXhr(
         resultCaches: state.resultCaches,
       })
 
-      sendHttpRequest(state.unresolvedRequestData as SendHttpRequestData, function(error_, response) {
-        if (!unmountedRef.current) {
-          // State Transition: 3
-          setState(function(current) {
-            const unresolvedRequirementId = current.unresolvedRequirementId;
-            if (
-              unresolvedRequirementId !== undefined &&
-              state.unresolvedRequirementId === unresolvedRequirementId
-            ) {
-              // TODO: Receive the error object too.
-              return {
-                reservedNewRequest: false,
-                resultCaches: recordResultCache(
-                  state.resultCaches,
-                  {
-                    requirementId: unresolvedRequirementId,
-                    result: {
-                      xhr: response.xhr,
-                    },
+      sendHttpRequest(
+        state.unresolvedRequestData as SendHttpRequestData,
+        function(error, requestResult) {
+          if (!unmountedRef.current) {
+            // State Transition: 3
+            setState(function(current) {
+              const unresolvedRequirementId = current.unresolvedRequirementId;
+              if (
+                unresolvedRequirementId !== undefined &&
+                state.unresolvedRequirementId === unresolvedRequirementId
+              ) {
+                const resultCache: UseXhrResultCache = {
+                  requirementId: unresolvedRequirementId,
+                  result: {
+                    xhr: requestResult.xhr,
+                    events: requestResult.events,
                   },
-                  maxResultCache,
-                )
+                }
+                if (error) {
+                  resultCache.result.error = error
+                }
+                return {
+                  reservedNewRequest: false,
+                  resultCaches: recordResultCache(state.resultCaches, resultCache, maxResultCache)
+                }
               }
-            }
-            return current
-          })
-        }
-      })
+              return current
+            })
+          }
+        },
+        sendHttpRequestOptions,
+      )
     }
   })
 
@@ -188,6 +245,10 @@ export function useXhr(
   }
   if (fixedRequirementId !== undefined && foundResultCache !== undefined) {
     result.xhr = foundResultCache.result.xhr
+    result.events = foundResultCache.result.events
+    if (foundResultCache.result.error) {
+      result.error = foundResultCache.result.error
+    }
   }
   return result
 }

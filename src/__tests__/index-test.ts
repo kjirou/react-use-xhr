@@ -62,7 +62,7 @@ describe('src/index', () => {
         {httpMethod: 'DELETE'},
       ]
       testCases.forEach(({httpMethod}) => {
-        describe(`${httpMethod}`, () => {
+        describe(`when it succeeded ${httpMethod} request`, () => {
           const requestData = {
             httpMethod,
             url: '/foo',
@@ -76,13 +76,85 @@ describe('src/index', () => {
           })
 
           it('can receive xhr instance', (done) => {
-            sendHttpRequest(requestData, (error_, response) => {
-              expect(response.xhr).toBeInstanceOf(XMLHttpRequest)
-              expect(response.xhr.status).toBe(200)
-              expect(response.xhr.responseText).toBe('BAR')
-              done();
+            sendHttpRequest(requestData, (error_, result) => {
+              expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
+              expect(result.xhr.status).toBe(200)
+              expect(result.xhr.responseText).toBe('BAR')
+              done()
             })
           })
+
+          it('should not return any error', (done) => {
+            sendHttpRequest(requestData, (error, result_) => {
+              expect(error).toBe(null)
+              done()
+            })
+          })
+        })
+      })
+    })
+
+    describe('event handling', () => {
+      describe('when it received "abort" event', () => {
+        const requestData: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+        }
+
+        beforeEach(() => {
+          xhrMock.get('/foo', () => new Promise(() => {}))
+        })
+
+        it('should return an error', (done) => {
+          const xhr = sendHttpRequest(requestData, (error, result_) => {
+            expect(error).toBeInstanceOf(Error)
+            expect(error?.message).toContain(' XHR error ')
+            done()
+          })
+          setTimeout(() => {
+            xhr.abort()
+          }, 1)
+        })
+
+        it('should return at least one "abort" event', (done) => {
+          const xhr = sendHttpRequest(requestData, (error_, result) => {
+            expect(result.events.length).toBeGreaterThan(0)
+            expect(result.events.some((event) => event.type === 'abort')).toBe(true)
+            done()
+          })
+          setTimeout(() => {
+            xhr.abort()
+          }, 1)
+        })
+      })
+
+      describe('when it received "timeout" event', () => {
+        const requestData: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+        }
+        const options = {
+          timeout: 1,
+        }
+
+        beforeEach(() => {
+          xhrMock.get('/foo', () => new Promise(() => {}))
+        })
+
+        it('should return an error', (done) => {
+          sendHttpRequest(requestData, (error, result_) => {
+            expect(error).toBeInstanceOf(Error)
+            expect(error?.message).toContain(' XHR error ')
+            done()
+          }, options)
+        })
+
+        it('should return at least one "timeout" event', (done) => {
+          sendHttpRequest(requestData, (error_, result) => {
+            expect(result.events.length).toBeGreaterThan(0)
+            expect(result.events.some((event) => event.type === 'timeout')).toBe(true)
+            done()
+          }, options)
         })
       })
     })
@@ -96,6 +168,7 @@ describe('src/index', () => {
             requirementId: 'a',
             result: {
               xhr: new XMLHttpRequest(),
+              events: [],
             },
           },
         ],
@@ -103,6 +176,7 @@ describe('src/index', () => {
           requirementId: 'b',
           result: {
             xhr: new XMLHttpRequest(),
+            events: [],
           },
         },
         100
@@ -117,12 +191,14 @@ describe('src/index', () => {
             requirementId: 'a',
             result: {
               xhr: new XMLHttpRequest(),
+              events: [],
             },
           },
           {
             requirementId: 'b',
             result: {
               xhr: new XMLHttpRequest(),
+              events: [],
             },
           },
         ],
@@ -130,6 +206,7 @@ describe('src/index', () => {
           requirementId: 'c',
           result: {
             xhr: new XMLHttpRequest(),
+            events: [],
           },
         },
         2
@@ -145,6 +222,7 @@ describe('src/index', () => {
           requirementId: 'a',
           result: {
             xhr: new XMLHttpRequest(),
+            events: [],
           },
         },
         0,
@@ -182,6 +260,11 @@ describe('src/index', () => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toContain('`maxResultCache`')
       })
+    })
+
+    describe('options.timeout', () => {
+      // Omit it, because it is not easy to write and probably can be verified by other tests.
+      it.todo('should be passed to sendHttpRequest')
     })
 
     describe('when it passes the same value with different references to requirementId', () => {
@@ -323,7 +406,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when requirementId and requestData are always undefined', () => {
+    describe('when requestData and requirementId are always undefined', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
@@ -359,7 +442,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when requirementId and requestData are always the same', () => {
+    describe('when requestData and requirementId are always the same', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
@@ -387,16 +470,31 @@ describe('src/index', () => {
         await sleep(50)
       })
 
-      it('should return isLoading=true without any xhr instance at the first render', () => {
+      it('should return isLoading=true without any property at the first render', () => {
         expect(handleResult.firstCall.args[0].isLoading).toBe(true)
-        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+        expect(handleResult.firstCall.args[0]).not.toHaveProperty('xhr')
+        expect(handleResult.firstCall.args[0]).not.toHaveProperty('events')
+        expect(handleResult.firstCall.args[0]).not.toHaveProperty('error')
       })
 
-      it('should return isLoading=false with a xhr instance at the last render', () => {
+      it('should return isLoading=false at the last render', () => {
         expect(handleResult.lastCall.args[0].isLoading).toBe(false)
+      })
+
+      it('should return a xhr instance at the last render', () => {
         expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
         expect(handleResult.lastCall.args[0].xhr.status).toBe(200)
         expect(handleResult.lastCall.args[0].xhr.responseText).toBe('BAR')
+      })
+
+      it('should include "loadend" event to the end of the events at the last render', () => {
+        const events = handleResult.lastCall.args[0].events
+        const lastEvent = events[events.length - 1]
+        expect(lastEvent.type).toBe('loadend')
+      })
+
+      it('should return without any error at the last render', () => {
+        expect(handleResult.lastCall.args[0]).not.toHaveProperty('error')
       })
     })
 
@@ -749,6 +847,35 @@ describe('src/index', () => {
         it('should return the last response at the last renderer', () => {
           expect(handleResult.lastCall.args[0].xhr.responseText).toBe('FOO2')
         })
+      })
+    })
+
+    describe('when the request it sent times out', () => {
+      const Tester: React.FC<{handleResult: any}> = (props) => {
+        const result = useXhr({httpMethod: 'GET', url: '/foo'}, undefined, {timeout: 1})
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+      let handleResult: any
+
+      beforeEach(async () => {
+        xhrMock.get('/foo', () => new Promise(() => {}))
+
+        handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+          await sleep(50)
+        })
+      })
+
+      it('should include "timeout" event in the result at the last render', () => {
+        expect(handleResult.lastCall.args[0].events.some((e: any) => e.type === 'timeout')).toBe(true)
+      })
+
+      it('should have an error in the result at the last render', () => {
+        expect(handleResult.lastCall.args[0].error).toBeInstanceOf(Error)
       })
     })
 
