@@ -6,15 +6,17 @@ import * as sinon from 'sinon'
 import xhrMock, {delay, sequence} from 'xhr-mock'
 
 import {
-  HttpMethod,
   UseXhrRequirementId,
   UseXhrResult,
   UseXhrResultCache,
-  SendHttpRequestData,
   recordResultCache,
-  sendHttpRequest,
   useXhr,
 } from '../index'
+import {
+  HttpMethod,
+  SendHttpRequestData,
+  sendHttpRequest,
+} from '../utils'
 
 const sleep = (time: number): Promise<void> => {
   return new Promise((resolve) => {setTimeout(resolve, time)})
