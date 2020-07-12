@@ -16,8 +16,9 @@ jobs:
       - checkout
       - run: node --version
       - run: npm --version
-      - node/install-packages:
-        cache-version: node12-v1
+      -
+        node/install-packages:
+          cache-version: node12-v1
       - run: npm run type-check
       - run: npm test
   build-and-test-on-node-v10:
@@ -27,8 +28,9 @@ jobs:
       - checkout
       - run: node --version
       - run: npm --version
-      - node/install-packages:
-        cache-version: node10-v1
+      -
+        node/install-packages:
+          cache-version: node10-v1
       - run: npm run type-check
       - run: npm test
 workflows:
