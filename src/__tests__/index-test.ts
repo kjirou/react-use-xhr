@@ -8,7 +8,6 @@ import xhrMock, {delay, sequence} from 'xhr-mock'
 import {
   UseXhrRequirementId,
   UseXhrResult,
-  UseXhrResultCache,
   useXhr,
 } from '../index'
 import {

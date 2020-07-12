@@ -11,7 +11,7 @@ import {
 
 export type UseXhrRequirementId = number | string | SendHttpRequestData
 
-export type UseXhrResultCache = {
+type UseXhrResultCache = {
   requirementId: UseXhrRequirementId,
   result: {
     error?: Error,
