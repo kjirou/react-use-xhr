@@ -1,79 +1,13 @@
 import * as React from 'react'
 
-import isEqual = require('lodash.isequal')
-
-function areEquivalentAAndB(a: any, b: any): boolean {
-  return isEqual(a, b)
-}
-
-export type HttpMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT'
-
-export type SendHttpRequestData = {
-  body?: string,
-  headers?: {[key in string]: string},
-  httpMethod: HttpMethod,
-  url: string,
-}
-
-export type SendHttpRequestOptions = {
-  timeout?: number,
-}
-
-export type SendHttpRequestResult = {
-  events: ProgressEvent[],
-  xhr: XMLHttpRequest,
-}
-
-export function sendHttpRequest(
-  data: SendHttpRequestData,
-  handleFinishLoadend: (error: Error | null, result: SendHttpRequestResult) => void,
-  options: SendHttpRequestOptions = {},
-): XMLHttpRequest {
-  const timeout: number | undefined = options.timeout !== undefined ? options.timeout : undefined
-  const xhr = new XMLHttpRequest()
-  const result: SendHttpRequestResult = {
-    xhr,
-    events: [],
-  }
-  xhr.onloadend = function(event: ProgressEvent) {
-    result.events.push(event)
-    const error: Error | null =
-      result.events.some(function(event) {
-        return ['abort', 'error', 'timeout'].indexOf(event.type) !== -1
-      })
-      ? new Error('Some XHR error has occurred.')
-      : null
-    handleFinishLoadend(error, result)
-  }
-  xhr.onloadstart = function(event: ProgressEvent) {
-    result.events.push(event)
-  }
-  xhr.onabort = function(event: ProgressEvent) {
-    result.events.push(event)
-  }
-  xhr.onerror = function(event: ProgressEvent) {
-    result.events.push(event)
-  }
-  xhr.onprogress = function(event: ProgressEvent) {
-    result.events.push(event)
-  }
-  xhr.onload = function(event: ProgressEvent) {
-    result.events.push(event)
-  }
-  xhr.ontimeout = function(event: ProgressEvent) {
-    result.events.push(event)
-  }
-  xhr.open(data.httpMethod, data.url)
-  const headers = data.headers || {}
-  Object.keys(headers).sort().forEach(function(key) {
-    xhr.setRequestHeader(key, headers[key])
-  })
-  if (timeout !== undefined) {
-    xhr.timeout = timeout
-  }
-  xhr.send(data.body !== undefined ? data.body : null)
-  return xhr
-}
+import {
+  SendHttpRequestData,
+  SendHttpRequestOptions,
+  SendHttpRequestResult,
+  areEquivalentAAndB,
+  appendItemAsLastInFirstOut,
+  sendHttpRequest,
+} from './utils'
 
 export type UseXhrRequirementId = number | string | SendHttpRequestData
 
@@ -97,18 +31,6 @@ function findResultCache(
     }
   }
   return undefined
-}
-
-export function recordResultCache(
-  resultCaches: UseXhrResultCache[],
-  appended: UseXhrResultCache,
-  maxNumber: number,
-): UseXhrResultCache[] {
-  let newResultCaches = resultCaches.concat([appended])
-  const extraNumber = newResultCaches.length > maxNumber
-    ? newResultCaches.length - maxNumber
-    : 0
-  return newResultCaches.slice(extraNumber, extraNumber + maxNumber)
 }
 
 type UseXhrOptions = {
@@ -139,17 +61,15 @@ type UseXhrState = {
   unresolvedRequirementId?: UseXhrRequirementId | undefined,
 }
 
-const defaultUseXhrState: UseXhrState = {
-  reservedNewRequest: false,
-  resultCaches: [],
-}
-
 export function useXhr(
   requestData: SendHttpRequestData | undefined,
   requirementId: UseXhrRequirementId | undefined = undefined,
   options: UseXhrOptions = {},
 ): UseXhrResult {
-  const [state, setState] = React.useState<UseXhrState>(defaultUseXhrState)
+  const [state, setState] = React.useState<UseXhrState>({
+    reservedNewRequest: false,
+    resultCaches: [],
+  })
   const unmountedRef = React.useRef(false)
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 100
@@ -228,7 +148,8 @@ export function useXhr(
                 }
                 return {
                   reservedNewRequest: false,
-                  resultCaches: recordResultCache(state.resultCaches, resultCache, maxResultCache)
+                  resultCaches: appendItemAsLastInFirstOut<UseXhrResultCache>(
+                    state.resultCaches, resultCache, maxResultCache)
                 }
               }
               return current

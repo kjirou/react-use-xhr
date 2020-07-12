@@ -6,15 +6,14 @@ import * as sinon from 'sinon'
 import xhrMock, {delay, sequence} from 'xhr-mock'
 
 import {
-  HttpMethod,
   UseXhrRequirementId,
   UseXhrResult,
   UseXhrResultCache,
-  SendHttpRequestData,
-  recordResultCache,
-  sendHttpRequest,
   useXhr,
 } from '../index'
+import {
+  SendHttpRequestData,
+} from '../utils'
 
 const sleep = (time: number): Promise<void> => {
   return new Promise((resolve) => {setTimeout(resolve, time)})
@@ -30,205 +29,6 @@ describe('src/index', () => {
     delete global.window
     delete global.document
     xhrMock.teardown()
-  })
-
-  describe('sendHttpRequest', () => {
-    it('can set http headers', (done) => {
-      xhrMock.get('/foo', (req, res) => {
-        expect(req.header('X-Foo')).toBe('Fooo')
-        return res.status(200)
-      })
-
-      sendHttpRequest(
-        {
-          httpMethod: 'GET',
-          url: '/foo',
-          headers: {
-            'X-Foo': 'Fooo',
-          },
-        },
-        (error_, result_) => {done()}
-      )
-    })
-
-    describe('can perform standard operations for each http-method', () => {
-      const testCases: {
-        httpMethod: HttpMethod,
-      }[] = [
-        {httpMethod: 'GET'},
-        {httpMethod: 'POST'},
-        {httpMethod: 'PATCH'},
-        {httpMethod: 'PUT'},
-        {httpMethod: 'DELETE'},
-      ]
-      testCases.forEach(({httpMethod}) => {
-        describe(`when it succeeded ${httpMethod} request`, () => {
-          const requestData = {
-            httpMethod,
-            url: '/foo',
-          }
-
-          beforeEach(() => {
-            xhrMock.use(httpMethod, '/foo', {
-              status: 200,
-              body: 'BAR',
-            })
-          })
-
-          it('can receive xhr instance', (done) => {
-            sendHttpRequest(requestData, (error_, result) => {
-              expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
-              expect(result.xhr.status).toBe(200)
-              expect(result.xhr.responseText).toBe('BAR')
-              done()
-            })
-          })
-
-          it('should not return any error', (done) => {
-            sendHttpRequest(requestData, (error, result_) => {
-              expect(error).toBe(null)
-              done()
-            })
-          })
-        })
-      })
-    })
-
-    describe('event handling', () => {
-      describe('when it received "abort" event', () => {
-        const requestData: SendHttpRequestData = {
-          httpMethod: 'GET',
-          url: '/foo',
-        }
-
-        beforeEach(() => {
-          xhrMock.get('/foo', () => new Promise(() => {}))
-        })
-
-        it('should return an error', (done) => {
-          const xhr = sendHttpRequest(requestData, (error, result_) => {
-            expect(error).toBeInstanceOf(Error)
-            expect(error?.message).toContain(' XHR error ')
-            done()
-          })
-          setTimeout(() => {
-            xhr.abort()
-          }, 1)
-        })
-
-        it('should return at least one "abort" event', (done) => {
-          const xhr = sendHttpRequest(requestData, (error_, result) => {
-            expect(result.events.length).toBeGreaterThan(0)
-            expect(result.events.some((event) => event.type === 'abort')).toBe(true)
-            done()
-          })
-          setTimeout(() => {
-            xhr.abort()
-          }, 1)
-        })
-      })
-
-      describe('when it received "timeout" event', () => {
-        const requestData: SendHttpRequestData = {
-          httpMethod: 'GET',
-          url: '/foo',
-        }
-        const options = {
-          timeout: 1,
-        }
-
-        beforeEach(() => {
-          xhrMock.get('/foo', () => new Promise(() => {}))
-        })
-
-        it('should return an error', (done) => {
-          sendHttpRequest(requestData, (error, result_) => {
-            expect(error).toBeInstanceOf(Error)
-            expect(error?.message).toContain(' XHR error ')
-            done()
-          }, options)
-        })
-
-        it('should return at least one "timeout" event', (done) => {
-          sendHttpRequest(requestData, (error_, result) => {
-            expect(result.events.length).toBeGreaterThan(0)
-            expect(result.events.some((event) => event.type === 'timeout')).toBe(true)
-            done()
-          }, options)
-        })
-      })
-    })
-  })
-
-  describe('recordResultCache', () => {
-    it('should append a new item to the last', function() {
-      const newCaches = recordResultCache(
-        [
-          {
-            requirementId: 'a',
-            result: {
-              xhr: new XMLHttpRequest(),
-              events: [],
-            },
-          },
-        ],
-        {
-          requirementId: 'b',
-          result: {
-            xhr: new XMLHttpRequest(),
-            events: [],
-          },
-        },
-        100
-      )
-      expect(newCaches[1].requirementId).toBe('b')
-    })
-
-    it('should remove an excess item from the first', function() {
-      const newCaches = recordResultCache(
-        [
-          {
-            requirementId: 'a',
-            result: {
-              xhr: new XMLHttpRequest(),
-              events: [],
-            },
-          },
-          {
-            requirementId: 'b',
-            result: {
-              xhr: new XMLHttpRequest(),
-              events: [],
-            },
-          },
-        ],
-        {
-          requirementId: 'c',
-          result: {
-            xhr: new XMLHttpRequest(),
-            events: [],
-          },
-        },
-        2
-      )
-      expect(newCaches[0].requirementId).toBe('b')
-      expect(newCaches[1].requirementId).toBe('c')
-    })
-
-    it('can not append any items if maxResultCache is 0', function() {
-      const newCaches = recordResultCache(
-        [],
-        {
-          requirementId: 'a',
-          result: {
-            xhr: new XMLHttpRequest(),
-            events: [],
-          },
-        },
-        0,
-      )
-      expect(newCaches.length).toBe(0)
-    })
   })
 
   describe('useXhr', () => {
@@ -267,7 +67,7 @@ describe('src/index', () => {
       it.todo('should be passed to sendHttpRequest')
     })
 
-    describe('when it passes the same value with different references to requirementId', () => {
+    describe('when it passes equivalent values with different references to requirementId', () => {
       const requestDataAndRequirementId1: SendHttpRequestData = {
         httpMethod: 'GET',
         url: '/foo',
@@ -320,7 +120,6 @@ describe('src/index', () => {
               handleResult,
             }),
           )
-          sleep(50)
         })
       })
 
@@ -428,7 +227,6 @@ describe('src/index', () => {
             React.createElement(Tester, {handleResult}),
           )
         })
-        await sleep(50)
       })
 
       it('should return isLoading=false without any xhr instance at the first render', () => {
@@ -467,7 +265,6 @@ describe('src/index', () => {
             React.createElement(Tester, {handleResult}),
           )
         })
-        await sleep(50)
       })
 
       it('should return isLoading=true without any property at the first render', () => {
@@ -539,7 +336,6 @@ describe('src/index', () => {
             }),
           )
         })
-        await sleep(50)
       })
 
       it('should return isLoading=false and xhr=undefined at the last render', () => {
