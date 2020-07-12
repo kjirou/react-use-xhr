@@ -15,6 +15,10 @@ export type SendHttpRequestData = {
   url: string,
 }
 
+export type SendHttpRequestOptions = {
+  timeout?: number,
+}
+
 export type SendHttpRequestResult = {
   events: ProgressEvent[],
   xhr: XMLHttpRequest,
@@ -23,7 +27,9 @@ export type SendHttpRequestResult = {
 export function sendHttpRequest(
   data: SendHttpRequestData,
   handleFinishLoadend: (error: Error | null, result: SendHttpRequestResult) => void,
+  options: SendHttpRequestOptions = {},
 ): XMLHttpRequest {
+  const timeout: number | undefined = options.timeout !== undefined ? options.timeout : undefined
   const xhr = new XMLHttpRequest()
   const result: SendHttpRequestResult = {
     xhr,
@@ -62,6 +68,9 @@ export function sendHttpRequest(
   Object.keys(headers).sort().forEach(function(key) {
     xhr.setRequestHeader(key, headers[key])
   })
+  if (timeout !== undefined) {
+    xhr.timeout = timeout
+  }
   xhr.send(data.body !== undefined ? data.body : null)
   return xhr
 }

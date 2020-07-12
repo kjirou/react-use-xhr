@@ -116,7 +116,7 @@ describe('src/index', () => {
           }, 1)
         })
 
-        it('should return at least one abort event', (done) => {
+        it('should return at least one "abort" event', (done) => {
           const xhr = sendHttpRequest(requestData, (error_, result) => {
             expect(result.events.length).toBeGreaterThan(0)
             expect(result.events.some((event) => event.type === 'abort')).toBe(true)
@@ -125,6 +125,36 @@ describe('src/index', () => {
           setTimeout(() => {
             xhr.abort()
           }, 1)
+        })
+      })
+
+      describe('when it received "timeout" event', () => {
+        const requestData: SendHttpRequestData = {
+          httpMethod: 'GET',
+          url: '/foo',
+        }
+        const options = {
+          timeout: 1,
+        }
+
+        beforeEach(() => {
+          xhrMock.get('/foo', () => new Promise(() => {}))
+        })
+
+        it('should return an error', (done) => {
+          sendHttpRequest(requestData, (error, result_) => {
+            expect(error).toBeInstanceOf(Error)
+            expect(error?.message).toContain(' XHR error ')
+            done()
+          }, options)
+        })
+
+        it('should return at least one "timeout" event', (done) => {
+          sendHttpRequest(requestData, (error_, result) => {
+            expect(result.events.length).toBeGreaterThan(0)
+            expect(result.events.some((event) => event.type === 'timeout')).toBe(true)
+            done()
+          }, options)
         })
       })
     })
