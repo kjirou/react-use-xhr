@@ -66,22 +66,22 @@ describe('src/index', () => {
     })
 
     describe('when it passes equivalent values with different references to queryId', () => {
-      const requestDataAndQueryId1: SendHttpRequestData = {
+      const queryAndQueryId1: SendHttpRequestData = {
         httpMethod: 'GET',
         url: '/foo',
         body: 'a',
       }
-      const requestDataAndQueryId2: SendHttpRequestData = {
+      const queryAndQueryId2: SendHttpRequestData = {
         httpMethod: 'GET',
         url: '/foo',
         body: 'a',
       }
       type TesterProps = {
         handleResult: any,
-        requestDataAndQueryId: SendHttpRequestData,
+        queryAndQueryId: SendHttpRequestData,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requestDataAndQueryId, props.requestDataAndQueryId)
+        const result = useXhr(props.queryAndQueryId, props.queryAndQueryId)
         props.handleResult(result)
         return React.createElement('div')
       }
@@ -106,7 +106,7 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer = ReactTestRenderer.create(
             React.createElement(Tester, {
-              requestDataAndQueryId: requestDataAndQueryId1,
+              queryAndQueryId: queryAndQueryId1,
               handleResult,
             }),
           )
@@ -114,7 +114,7 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer.update(
             React.createElement(Tester, {
-              requestDataAndQueryId: requestDataAndQueryId2,
+              queryAndQueryId: queryAndQueryId2,
               handleResult,
             }),
           )
@@ -157,7 +157,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('can not change requestData if queryId is not changed', () => {
+    describe('can not change query if queryId is not changed', () => {
       const originalConsoleError = console.error;
 
       beforeEach(() => {
@@ -170,7 +170,7 @@ describe('src/index', () => {
         console.error = originalConsoleError
       })
 
-      it('should throw an error if requestData is changed in the same queryId', async () => {
+      it('should throw an error if query is changed in the same queryId', async () => {
         const Tester: React.FC<{body: string}> = (props) => {
           useXhr({
             httpMethod: 'GET',
@@ -203,7 +203,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when requestData and queryId are always undefined', () => {
+    describe('when query and queryId are always undefined', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
@@ -238,7 +238,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('when requestData and queryId are always the same', () => {
+    describe('when query and queryId are always the same', () => {
       type TesterProps = {
         handleResult: (result: UseXhrResult) => void,
       }
@@ -296,11 +296,11 @@ describe('src/index', () => {
     describe('when it sets an undefined after setting a value to queryId', () => {
       type TesterProps = {
         handleResult: any,
-        requestData: SendHttpRequestData | undefined,
+        query: SendHttpRequestData | undefined,
         queryId: string | undefined,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requestData, props.queryId)
+        const result = useXhr(props.query, props.queryId)
         props.handleResult(result)
         return React.createElement('div')
       }
@@ -317,7 +317,7 @@ describe('src/index', () => {
           testRenderer = ReactTestRenderer.create(
             React.createElement(Tester, {
               queryId: 'a',
-              requestData: {
+              query: {
                 httpMethod: 'GET',
                 url: '/foo',
               },
@@ -329,7 +329,7 @@ describe('src/index', () => {
           testRenderer.update(
             React.createElement(Tester, {
               queryId: undefined,
-              requestData: undefined,
+              query: undefined,
               handleResult,
             }),
           )
@@ -345,11 +345,11 @@ describe('src/index', () => {
     describe('when it sends and receives the 2nd request(="b") before resolving the 1st request(="a")', () => {
       type TesterProps = {
         handleResult: any,
-        requestData: SendHttpRequestData,
+        query: SendHttpRequestData,
         queryId: string,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requestData, props.queryId)
+        const result = useXhr(props.query, props.queryId)
         props.handleResult(props.queryId, result)
         return React.createElement('div')
       }
@@ -370,7 +370,7 @@ describe('src/index', () => {
           testRenderer = ReactTestRenderer.create(
             React.createElement(Tester, {
               queryId: 'a',
-              requestData: {
+              query: {
                 httpMethod: 'GET',
                 url: '/foo',
               },
@@ -382,7 +382,7 @@ describe('src/index', () => {
           testRenderer.update(
             React.createElement(Tester, {
               queryId: 'b',
-              requestData: {
+              query: {
                 httpMethod: 'GET',
                 url: '/bar',
               },
@@ -425,11 +425,11 @@ describe('src/index', () => {
       type TesterProps = {
         handleResult: any,
         maxResultCache: number,
-        requestData: SendHttpRequestData | undefined,
+        query: SendHttpRequestData | undefined,
         queryId: string | undefined,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requestData, props.queryId, {maxResultCache: props.maxResultCache})
+        const result = useXhr(props.query, props.queryId, {maxResultCache: props.maxResultCache})
         props.handleResult(result)
         return React.createElement('div')
       }
@@ -439,7 +439,7 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer = ReactTestRenderer.create(
             React.createElement(Tester, {
-              requestData: {
+              query: {
                 httpMethod: 'GET',
                 url: '/foo',
               },
@@ -452,7 +452,7 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer.update(
             React.createElement(Tester, {
-              requestData: {
+              query: {
                 httpMethod: 'GET',
                 url: '/bar',
               },
@@ -465,7 +465,7 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer.update(
             React.createElement(Tester, {
-              requestData: {
+              query: {
                 httpMethod: 'GET',
                 url: '/foo',
               },
@@ -531,21 +531,21 @@ describe('src/index', () => {
     describe('when it omits queryId', () => {
       type TesterProps = {
         handleResult: any,
-        requestData: SendHttpRequestData,
+        query: SendHttpRequestData,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.requestData)
+        const result = useXhr(props.query)
         props.handleResult(result)
         return React.createElement('div')
       }
 
-      describe('when the value of requestData does not change', () => {
-        const requestData1: SendHttpRequestData = {
+      describe('when the value of query does not change', () => {
+        const query1: SendHttpRequestData = {
           httpMethod: 'GET',
           url: '/foo',
           body: 'a',
         }
-        const requestData2: SendHttpRequestData = {
+        const query2: SendHttpRequestData = {
           httpMethod: 'GET',
           url: '/foo',
           body: 'a',
@@ -571,7 +571,7 @@ describe('src/index', () => {
           await ReactTestRenderer.act(async () => {
             testRenderer = ReactTestRenderer.create(
               React.createElement(Tester, {
-                requestData: requestData1,
+                query: query1,
                 handleResult,
               }),
             )
@@ -579,7 +579,7 @@ describe('src/index', () => {
           await ReactTestRenderer.act(async () => {
             testRenderer.update(
               React.createElement(Tester, {
-                requestData: requestData2,
+                query: query2,
                 handleResult,
               }),
             )
@@ -591,13 +591,13 @@ describe('src/index', () => {
         })
       })
 
-      describe('when the value of requestData changes', () => {
-        const requestData1: SendHttpRequestData = {
+      describe('when the value of query changes', () => {
+        const query1: SendHttpRequestData = {
           httpMethod: 'GET',
           url: '/foo',
           body: 'a',
         }
-        const requestData2: SendHttpRequestData = {
+        const query2: SendHttpRequestData = {
           httpMethod: 'GET',
           url: '/foo',
           body: 'b',
@@ -623,7 +623,7 @@ describe('src/index', () => {
           await ReactTestRenderer.act(async () => {
             testRenderer = ReactTestRenderer.create(
               React.createElement(Tester, {
-                requestData: requestData1,
+                query: query1,
                 handleResult,
               }),
             )
@@ -631,7 +631,7 @@ describe('src/index', () => {
           await ReactTestRenderer.act(async () => {
             testRenderer.update(
               React.createElement(Tester, {
-                requestData: requestData2,
+                query: query2,
                 handleResult,
               }),
             )

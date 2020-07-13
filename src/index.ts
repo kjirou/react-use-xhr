@@ -57,12 +57,12 @@ type UseXhrState = {
   reservedNewRequest: boolean,
   // The old element is saved at the top. So-called last-in first-out.
   resultCaches: UseXhrResultCache[],
+  unresolvedQuery?: SendHttpRequestData,
   unresolvedQueryId?: UseXhrQueryId | undefined,
-  unresolvedRequestData?: SendHttpRequestData,
 }
 
 export function useXhr(
-  requestData: SendHttpRequestData | undefined,
+  query: SendHttpRequestData | undefined,
   queryId: UseXhrQueryId | undefined = undefined,
   options: UseXhrOptions = {},
 ): UseXhrResult {
@@ -74,29 +74,27 @@ export function useXhr(
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 1
   const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
-  const fixedQueryId: UseXhrQueryId | undefined =
-    queryId !== undefined ? queryId : requestData
-  const invalidRequestData =
-    requestData === undefined && queryId !== undefined
-  const requestDataChangedIllegally =
+  const fixedQueryId: UseXhrQueryId | undefined = queryId !== undefined ? queryId : query
+  const invalidQuery = query === undefined && queryId !== undefined
+  const queryChangedIllegally =
     fixedQueryId !== undefined &&
     areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
-    !areEquivalentAAndB(requestData, state.unresolvedRequestData)
+    !areEquivalentAAndB(query, state.unresolvedQuery)
   const foundResultCache = fixedQueryId !== undefined
     ? findResultCache(state.resultCaches, fixedQueryId)
     : undefined
   const startNewRequest =
-    requestData !== undefined &&
+    query !== undefined &&
     fixedQueryId !== undefined &&
     !areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
     foundResultCache === undefined
 
   if (maxResultCache < 1) {
     throw new Error('`maxResultCache` is less than 1.')
-  } else if (invalidRequestData) {
+  } else if (invalidQuery) {
     throw new Error('Can not specify only `queryId`.')
-  } else if (requestDataChangedIllegally) {
-    throw new Error('Can not change the `requestData` associated with the `queryId`.')
+  } else if (queryChangedIllegally) {
+    throw new Error('Can not change the `query` associated with the `queryId`.')
   }
 
   if (startNewRequest) {
@@ -104,7 +102,7 @@ export function useXhr(
     setState({
       reservedNewRequest: true,
       unresolvedQueryId: fixedQueryId,
-      unresolvedRequestData: requestData,
+      unresolvedQuery: query,
       resultCaches: state.resultCaches,
     })
   }
@@ -121,12 +119,12 @@ export function useXhr(
       setState({
         reservedNewRequest: false,
         unresolvedQueryId: state.unresolvedQueryId,
-        unresolvedRequestData: state.unresolvedRequestData,
+        unresolvedQuery: state.unresolvedQuery,
         resultCaches: state.resultCaches,
       })
 
       sendHttpRequest(
-        state.unresolvedRequestData as SendHttpRequestData,
+        state.unresolvedQuery as SendHttpRequestData,
         function(error, requestResult) {
           if (!unmountedRef.current) {
             // State Transition: 3
