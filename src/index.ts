@@ -9,7 +9,8 @@ import {
   sendHttpRequest,
 } from './utils'
 
-export type QueryId = number | string | SendHttpRequestData
+export type Query = SendHttpRequestData
+export type QueryId = number | string | Query
 
 type UseXhrResultCache = {
   queryId: QueryId,
@@ -57,12 +58,12 @@ type UseXhrState = {
   reservedNewRequest: boolean,
   // The old element is saved at the top. So-called last-in first-out.
   resultCaches: UseXhrResultCache[],
-  unresolvedQuery?: SendHttpRequestData,
+  unresolvedQuery?: Query,
   unresolvedQueryId?: QueryId | undefined,
 }
 
 export function useXhr(
-  query: SendHttpRequestData | undefined,
+  query: Query | undefined,
   queryId: QueryId | undefined = undefined,
   options: UseXhrOptions = {},
 ): UseXhrResult {
@@ -124,7 +125,7 @@ export function useXhr(
       })
 
       sendHttpRequest(
-        state.unresolvedQuery as SendHttpRequestData,
+        state.unresolvedQuery as Query,
         function(error, requestResult) {
           if (!unmountedRef.current) {
             // State Transition: 3
