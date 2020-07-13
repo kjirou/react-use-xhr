@@ -1,0 +1,24 @@
+{
+    "env": {
+        "browser": true
+    },
+    "globals": {
+        "Promise": "off"
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "plugins": [
+        "es5"
+    ],
+    "rules": {
+        "no-undef": "error",
+        "es5/no-es6-methods": "error",
+        "es5/no-es6-static-methods": "error",
+        "es5/no-object-super": "error",
+        "es5/no-typeof-symbol": "error",
+        "es5/no-unicode-code-point-escape": "error",
+        "es5/no-unicode-regex": "error"
+    }
+}

@@ -20,6 +20,7 @@ jobs:
         node/install-packages:
           cache-version: node12-v1
       - run: npm run type-check
+      - run: npm run lint
       - run: npm test
   build-and-test-on-node-v10:
     executor:
@@ -32,6 +33,7 @@ jobs:
         node/install-packages:
           cache-version: node10-v1
       - run: npm run type-check
+      - run: npm run lint
       - run: npm test
 workflows:
   build-and-test:
