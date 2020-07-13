@@ -1,4 +1,3 @@
-import * as jsdom from 'jsdom'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import * as ReactTestRenderer from 'react-test-renderer'
@@ -20,12 +19,8 @@ const sleep = (time: number): Promise<void> => {
 describe('src/index', () => {
   beforeEach(() => {
     xhrMock.setup()
-    global.window = new jsdom.JSDOM('<html><body></body></html>').window as any
-    global.document = global.window.document as any
   })
   afterEach(() => {
-    delete global.window
-    delete global.document
     xhrMock.teardown()
   })
 
