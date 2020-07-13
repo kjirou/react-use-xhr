@@ -21,10 +21,7 @@ type UseXhrResultCache = {
   },
 }
 
-function findResultCache(
-  resultCaches: UseXhrResultCache[],
-  queryId: QueryId,
-): UseXhrResultCache | undefined {
+function findResultCache(resultCaches: UseXhrResultCache[], queryId: QueryId): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
     if (areEquivalentAAndB(resultCache.queryId, queryId)) {
