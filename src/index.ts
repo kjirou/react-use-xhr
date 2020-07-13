@@ -9,10 +9,10 @@ import {
   sendHttpRequest,
 } from './utils'
 
-export type UseXhrRequirementId = number | string | SendHttpRequestData
+export type UseXhrQueryId = number | string | SendHttpRequestData
 
 type UseXhrResultCache = {
-  requirementId: UseXhrRequirementId,
+  queryId: UseXhrQueryId,
   result: {
     error?: Error,
     events: SendHttpRequestResult['events'],
@@ -22,11 +22,11 @@ type UseXhrResultCache = {
 
 function findResultCache(
   resultCaches: UseXhrResultCache[],
-  requirementId: UseXhrRequirementId,
+  queryId: UseXhrQueryId,
 ): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
-    if (areEquivalentAAndB(resultCache.requirementId, requirementId)) {
+    if (areEquivalentAAndB(resultCache.queryId, queryId)) {
       return resultCache
     }
   }
@@ -57,13 +57,13 @@ type UseXhrState = {
   reservedNewRequest: boolean,
   // The old element is saved at the top. So-called last-in first-out.
   resultCaches: UseXhrResultCache[],
+  unresolvedQueryId?: UseXhrQueryId | undefined,
   unresolvedRequestData?: SendHttpRequestData,
-  unresolvedRequirementId?: UseXhrRequirementId | undefined,
 }
 
 export function useXhr(
   requestData: SendHttpRequestData | undefined,
-  requirementId: UseXhrRequirementId | undefined = undefined,
+  queryId: UseXhrQueryId | undefined = undefined,
   options: UseXhrOptions = {},
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>({
@@ -74,36 +74,36 @@ export function useXhr(
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 1
   const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
-  const fixedRequirementId: UseXhrRequirementId | undefined =
-    requirementId !== undefined ? requirementId : requestData
+  const fixedQueryId: UseXhrQueryId | undefined =
+    queryId !== undefined ? queryId : requestData
   const invalidRequestData =
-    requestData === undefined && requirementId !== undefined
+    requestData === undefined && queryId !== undefined
   const requestDataChangedIllegally =
-    fixedRequirementId !== undefined &&
-    areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    fixedQueryId !== undefined &&
+    areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
     !areEquivalentAAndB(requestData, state.unresolvedRequestData)
-  const foundResultCache = fixedRequirementId !== undefined
-    ? findResultCache(state.resultCaches, fixedRequirementId)
+  const foundResultCache = fixedQueryId !== undefined
+    ? findResultCache(state.resultCaches, fixedQueryId)
     : undefined
   const startNewRequest =
     requestData !== undefined &&
-    fixedRequirementId !== undefined &&
-    !areEquivalentAAndB(fixedRequirementId, state.unresolvedRequirementId) &&
+    fixedQueryId !== undefined &&
+    !areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
     foundResultCache === undefined
 
   if (maxResultCache < 1) {
     throw new Error('`maxResultCache` is less than 1.')
   } else if (invalidRequestData) {
-    throw new Error('Can not specify only `requirementId`.')
+    throw new Error('Can not specify only `queryId`.')
   } else if (requestDataChangedIllegally) {
-    throw new Error('Can not change the `requestData` associated with the `requirementId`.')
+    throw new Error('Can not change the `requestData` associated with the `queryId`.')
   }
 
   if (startNewRequest) {
     // State Transition: 1
     setState({
       reservedNewRequest: true,
-      unresolvedRequirementId: fixedRequirementId,
+      unresolvedQueryId: fixedQueryId,
       unresolvedRequestData: requestData,
       resultCaches: state.resultCaches,
     })
@@ -120,7 +120,7 @@ export function useXhr(
       // State Transition: 2
       setState({
         reservedNewRequest: false,
-        unresolvedRequirementId: state.unresolvedRequirementId,
+        unresolvedQueryId: state.unresolvedQueryId,
         unresolvedRequestData: state.unresolvedRequestData,
         resultCaches: state.resultCaches,
       })
@@ -131,13 +131,13 @@ export function useXhr(
           if (!unmountedRef.current) {
             // State Transition: 3
             setState(function(current) {
-              const unresolvedRequirementId = current.unresolvedRequirementId;
+              const unresolvedQueryId = current.unresolvedQueryId;
               if (
-                unresolvedRequirementId !== undefined &&
-                state.unresolvedRequirementId === unresolvedRequirementId
+                unresolvedQueryId !== undefined &&
+                state.unresolvedQueryId === unresolvedQueryId
               ) {
                 const resultCache: UseXhrResultCache = {
-                  requirementId: unresolvedRequirementId,
+                  queryId: unresolvedQueryId,
                   result: {
                     xhr: requestResult.xhr,
                     events: requestResult.events,
@@ -162,9 +162,9 @@ export function useXhr(
   })
 
   const result: UseXhrResult = {
-    isLoading: startNewRequest || state.unresolvedRequirementId !== undefined,
+    isLoading: startNewRequest || state.unresolvedQueryId !== undefined,
   }
-  if (fixedRequirementId !== undefined && foundResultCache !== undefined) {
+  if (fixedQueryId !== undefined && foundResultCache !== undefined) {
     result.xhr = foundResultCache.result.xhr
     result.events = foundResultCache.result.events
     if (foundResultCache.result.error) {
