@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.js",
   "scripts": {
+    "lint": "$(npm bin)/eslint 'src/*.ts'",
     "test": "$(npm bin)/jest",
     "type-check": "$(npm bin)/tsc --noEmit"
   },
