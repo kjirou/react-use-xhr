@@ -72,7 +72,7 @@ export function useXhr(
   })
   const unmountedRef = React.useRef(false)
   const maxResultCache = options.maxResultCache !== undefined
-    ? options.maxResultCache : 100
+    ? options.maxResultCache : 1
   const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
   const fixedRequirementId: UseXhrRequirementId | undefined =
     requirementId !== undefined ? requirementId : requestData
