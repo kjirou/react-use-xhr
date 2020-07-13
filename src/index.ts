@@ -34,12 +34,12 @@ function findResultCache(
   return undefined
 }
 
-type UseXhrOptions = {
+export type UseXhrOptionsValue = {
   maxResultCache?: number,
   timeout?: SendHttpRequestOptions['timeout'],
 }
 
-function deriveSendHttpRequestOptions(useXhrOptions: UseXhrOptions): SendHttpRequestOptions {
+function deriveSendHttpRequestOptions(useXhrOptions: UseXhrOptionsValue): SendHttpRequestOptions {
   const result: SendHttpRequestOptions = {}
   if (useXhrOptions.timeout !== undefined) {
     result.timeout = useXhrOptions.timeout
@@ -65,7 +65,7 @@ type UseXhrState = {
 export function useXhr(
   query: Query | undefined,
   queryId: QueryId | undefined = undefined,
-  options: UseXhrOptions = {},
+  options: UseXhrOptionsValue = {},
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>({
     reservedNewRequest: false,
