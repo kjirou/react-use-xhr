@@ -9,10 +9,10 @@ import {
   sendHttpRequest,
 } from './utils'
 
-export type UseXhrQueryId = number | string | SendHttpRequestData
+export type QueryId = number | string | SendHttpRequestData
 
 type UseXhrResultCache = {
-  queryId: UseXhrQueryId,
+  queryId: QueryId,
   result: {
     error?: Error,
     events: SendHttpRequestResult['events'],
@@ -22,7 +22,7 @@ type UseXhrResultCache = {
 
 function findResultCache(
   resultCaches: UseXhrResultCache[],
-  queryId: UseXhrQueryId,
+  queryId: QueryId,
 ): UseXhrResultCache | undefined {
   for (let i = 0; i < resultCaches.length; i++) {
     const resultCache = resultCaches[i]
@@ -58,12 +58,12 @@ type UseXhrState = {
   // The old element is saved at the top. So-called last-in first-out.
   resultCaches: UseXhrResultCache[],
   unresolvedQuery?: SendHttpRequestData,
-  unresolvedQueryId?: UseXhrQueryId | undefined,
+  unresolvedQueryId?: QueryId | undefined,
 }
 
 export function useXhr(
   query: SendHttpRequestData | undefined,
-  queryId: UseXhrQueryId | undefined = undefined,
+  queryId: QueryId | undefined = undefined,
   options: UseXhrOptions = {},
 ): UseXhrResult {
   const [state, setState] = React.useState<UseXhrState>({
@@ -74,7 +74,7 @@ export function useXhr(
   const maxResultCache = options.maxResultCache !== undefined
     ? options.maxResultCache : 1
   const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
-  const fixedQueryId: UseXhrQueryId | undefined = queryId !== undefined ? queryId : query
+  const fixedQueryId: QueryId | undefined = queryId !== undefined ? queryId : query
   const invalidQuery = query === undefined && queryId !== undefined
   const queryChangedIllegally =
     fixedQueryId !== undefined &&
