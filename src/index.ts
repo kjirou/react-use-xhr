@@ -131,7 +131,7 @@ export function useXhr(
     foundResultCache === undefined
 
   if (maxResultCacheSetting < 1) {
-    throw new Error('`maxResultCache` is less than 1.')
+    throw new Error('Can not specify less than 1 to `maxResultCache`.')
   } else if (invalidQuery) {
     throw new Error('Can not specify only `queryId`.')
   } else if (queryChangedIllegally) {
