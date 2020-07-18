@@ -34,7 +34,7 @@ export type SendHttpRequestResult = {
 
 export function sendHttpRequest(
   data: SendHttpRequestData,
-  handleFinishLoadend: (error: Error | null, result: SendHttpRequestResult) => void,
+  handleEvent: (error: Error | null, result: SendHttpRequestResult) => void,
   options: SendHttpRequestOptions = {},
 ): XMLHttpRequest {
   const timeout: number | undefined = options.timeout !== undefined ? options.timeout : undefined
@@ -51,7 +51,7 @@ export function sendHttpRequest(
       })
       ? new Error('Some XHR error has occurred.')
       : null
-    handleFinishLoadend(error, result)
+    handleEvent(error, result)
   }
   xhr.onloadstart = function(event: ProgressEvent) {
     result.events.push(event)
