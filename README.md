@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/kjirou/react-use-xhr.svg?style=svg)](https://circleci.com/gh/kjirou/react-use-xhr)
 
-A simple React hook that communicates via XHR
+A simple React hook that communicates via XMLHttpRequest(XHR)
 
 
 ## :eyes: Overview
