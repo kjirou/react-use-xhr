@@ -64,99 +64,119 @@ describe('src/utils', () => {
         {httpMethod: 'DELETE'},
       ]
       testCases.forEach(({httpMethod}) => {
-        describe(`when it succeeded ${httpMethod} request`, () => {
+        describe(`when the ${httpMethod} resource exists`, () => {
           const requestData = {
             httpMethod,
             url: '/foo',
           }
+          let handleEvent: any
 
           beforeEach(() => {
             xhrMock.use(httpMethod, '/foo', {
               status: 200,
-              body: 'BAR',
+              body: 'FOO',
             })
+            handleEvent = sinon.spy()
           })
 
-          it('can receive xhr instance', (done) => {
-            sendHttpRequest(requestData, (error_, result) => {
-              expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
-              expect(result.xhr.status).toBe(200)
-              expect(result.xhr.responseText).toBe('BAR')
-              done()
-            })
+          it('should return "loadstart" event at the first call', (done) => {
+            sendHttpRequest(requestData, handleEvent)
+            setTimeout(() => {
+              const result = handleEvent.lastCall.args[1]
+              try {
+                expect(result.events[0].type).toBe('loadstart')
+                done()
+              } catch (exception) {
+                done(exception)
+              }
+            }, 25)
           })
 
-          it('should not return any error', (done) => {
-            sendHttpRequest(requestData, (error, result_) => {
-              expect(error).toBe(null)
-              done()
-            })
+          it('should return "loadend" event with an xhr instance at the last call', (done) => {
+            sendHttpRequest(requestData, handleEvent)
+            setTimeout(() => {
+              const [error, result] = handleEvent.lastCall.args
+              try {
+                expect(result.events[result.events.length - 1].type).toBe('loadend')
+                expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
+                done()
+              } catch (exception) {
+                done(exception)
+              }
+            }, 25)
           })
         })
       })
     })
 
-    describe('event handling', () => {
-      describe('when it received "abort" event', () => {
-        const requestData: SendHttpRequestData = {
-          httpMethod: 'GET',
-          url: '/foo',
-        }
+    describe('event handling for each', () => {
+      describe('when it received any "abort" event', () => {
+        let sendHttpRequestForTest: any;
 
         beforeEach(() => {
           xhrMock.get('/foo', () => new Promise(() => {}))
+          sendHttpRequestForTest = (): any => {
+            const handleEvent: any = sinon.spy()
+            const xhr = sendHttpRequest(
+              {
+                httpMethod: 'GET',
+                url: '/foo',
+              },
+              handleEvent,
+            )
+            setTimeout(() => {
+              xhr.abort()
+            }, 1)
+            return handleEvent;
+          }
         })
 
-        it('should return an error', (done) => {
-          const xhr = sendHttpRequest(requestData, (error, result_) => {
-            expect(error).toBeInstanceOf(Error)
-            expect(error?.message).toContain(' XHR error ')
-            done()
-          })
+        it('should include an "abort" event before the "loadend" event at the last call', (done) => {
+          const handleEvent = sendHttpRequestForTest()
           setTimeout(() => {
-            xhr.abort()
-          }, 1)
-        })
-
-        it('should return at least one "abort" event', (done) => {
-          const xhr = sendHttpRequest(requestData, (error_, result) => {
-            expect(result.events.length).toBeGreaterThan(0)
-            expect(result.events.some((event) => event.type === 'abort')).toBe(true)
-            done()
-          })
-          setTimeout(() => {
-            xhr.abort()
-          }, 1)
+            const result = handleEvent.lastCall.args[1]
+            try {
+              expect(result.events[result.events.length - 2].type).toBe('abort')
+              expect(result.events[result.events.length - 1].type).toBe('loadend')
+              done()
+            } catch (exception) {
+              done(exception)
+            }
+          }, 25)
         })
       })
 
-      describe('when it received "timeout" event', () => {
-        const requestData: SendHttpRequestData = {
-          httpMethod: 'GET',
-          url: '/foo',
-        }
-        const options = {
-          timeout: 1,
-        }
+      describe('when it received any "timeout" event', () => {
+        let sendHttpRequestForTest: any;
 
         beforeEach(() => {
           xhrMock.get('/foo', () => new Promise(() => {}))
+          sendHttpRequestForTest = (): any => {
+            const handleEvent: any = sinon.spy()
+            sendHttpRequest(
+              {
+                httpMethod: 'GET',
+                url: '/foo',
+              },
+              handleEvent,
+              {timeout: 1},
+            )
+            return handleEvent;
+          }
         })
 
-        it('should return an error', (done) => {
-          sendHttpRequest(requestData, (error, result_) => {
-            expect(error).toBeInstanceOf(Error)
-            expect(error?.message).toContain(' XHR error ')
-            done()
-          }, options)
-        })
-
-        it('should return at least one "timeout" event', (done) => {
-          sendHttpRequest(requestData, (error_, result) => {
-            expect(result.events.length).toBeGreaterThan(0)
-            expect(result.events.some((event) => event.type === 'timeout')).toBe(true)
-            done()
-          }, options)
+        it('should include a "timeout" event before the "loadend" event at the last call', (done) => {
+          const handleEvent = sendHttpRequestForTest()
+          setTimeout(() => {
+            const result = handleEvent.lastCall.args[1]
+            try {
+              expect(result.events[result.events.length - 2].type).toBe('timeout')
+              expect(result.events[result.events.length - 1].type).toBe('loadend')
+              done()
+            } catch (exception) {
+              done(exception)
+            }
+          }, 25)
         })
       })
     })

@@ -17,7 +17,7 @@ type UseXhrResultCache = {
   result: {
     error?: Error,
     events: SendHttpRequestResult['events'],
-    xhr: SendHttpRequestResult['xhr'],
+    xhr?: SendHttpRequestResult['xhr'],
   },
 }
 
@@ -29,6 +29,16 @@ function findResultCache(resultCaches: UseXhrResultCache[], queryId: QueryId): U
     }
   }
   return undefined
+}
+
+function replaceResultCache(
+  resultCaches: UseXhrResultCache[], replacement: UseXhrResultCache,
+): UseXhrResultCache[] {
+  return resultCaches.map(function(resultCache) {
+    return areEquivalentAAndB(resultCache.queryId, replacement.queryId)
+      ? replacement
+      : resultCache
+  })
 }
 
 export type UseXhrOptionsValue = {
@@ -46,7 +56,7 @@ function deriveSendHttpRequestOptions(useXhrOptions: UseXhrOptionsValue): SendHt
 
 export type UseXhrResult = {
   error?: Error,
-  events?: SendHttpRequestResult['events'],
+  events: SendHttpRequestResult['events'],
   isLoading: boolean,
   xhr?: SendHttpRequestResult['xhr'],
 }
@@ -57,6 +67,39 @@ type UseXhrState = {
   resultCaches: UseXhrResultCache[],
   unresolvedQuery?: Query,
   unresolvedQueryId?: QueryId | undefined,
+}
+
+function receiveResponseIntoState(
+  state: UseXhrState,
+  maxResultCache: NonNullable<UseXhrOptionsValue['maxResultCache']>,
+  error: Error | null,
+  response: SendHttpRequestResult,
+): UseXhrState {
+  const unresolvedQueryId = state.unresolvedQueryId
+  if (unresolvedQueryId === undefined) {
+    throw new Error('unresolvedQueryId` should be present.')
+  }
+  const requestCompleted = response.xhr !== undefined
+  const newResultCache: UseXhrResultCache = {
+    queryId: unresolvedQueryId,
+    result: {
+      events: response.events,
+      ...(error ? {error: error} : {}),
+      ...(requestCompleted ? {xhr: response.xhr} : {}),
+    },
+  }
+  const resultCaches: UseXhrResultCache[] = findResultCache(state.resultCaches, unresolvedQueryId)
+    ? replaceResultCache(state.resultCaches, newResultCache)
+    : appendItemAsLastInFirstOut<UseXhrResultCache>(state.resultCaches, newResultCache, maxResultCache)
+  const newState: UseXhrState = {
+    reservedNewRequest: false,
+    resultCaches,
+  }
+  if (!requestCompleted) {
+    newState.unresolvedQueryId = unresolvedQueryId
+    newState.unresolvedQuery = state.unresolvedQuery
+  }
+  return newState
 }
 
 export function useXhr(
@@ -73,17 +116,17 @@ export function useXhr(
     ? options.maxResultCache : 1
   const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
   const fixedQueryId: QueryId | undefined = queryId !== undefined ? queryId : query
+  const resultRequired = fixedQueryId !== undefined
   const invalidQuery = query === undefined && queryId !== undefined
   const queryChangedIllegally =
-    fixedQueryId !== undefined &&
+    resultRequired &&
     areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
     !areEquivalentAAndB(query, state.unresolvedQuery)
   const foundResultCache = fixedQueryId !== undefined
     ? findResultCache(state.resultCaches, fixedQueryId)
     : undefined
   const startNewRequest =
-    query !== undefined &&
-    fixedQueryId !== undefined &&
+    resultRequired &&
     !areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
     foundResultCache === undefined
 
@@ -123,32 +166,17 @@ export function useXhr(
 
       sendHttpRequest(
         state.unresolvedQuery as Query,
-        function(error, requestResult) {
+        function(error, response) {
           if (!unmountedRef.current) {
             // State Transition: 3
-            setState(function(current) {
-              const unresolvedQueryId = current.unresolvedQueryId;
+            setState(function(currentState) {
               if (
-                unresolvedQueryId !== undefined &&
-                state.unresolvedQueryId === unresolvedQueryId
+                currentState.unresolvedQueryId !== undefined &&
+                areEquivalentAAndB(currentState.unresolvedQueryId, state.unresolvedQueryId)
               ) {
-                const resultCache: UseXhrResultCache = {
-                  queryId: unresolvedQueryId,
-                  result: {
-                    xhr: requestResult.xhr,
-                    events: requestResult.events,
-                  },
-                }
-                if (error) {
-                  resultCache.result.error = error
-                }
-                return {
-                  reservedNewRequest: false,
-                  resultCaches: appendItemAsLastInFirstOut<UseXhrResultCache>(
-                    state.resultCaches, resultCache, maxResultCache)
-                }
+                return receiveResponseIntoState(currentState, maxResultCache, error, response)
               }
-              return current
+              return currentState
             })
           }
         },
@@ -159,10 +187,13 @@ export function useXhr(
 
   const result: UseXhrResult = {
     isLoading: startNewRequest || state.unresolvedQueryId !== undefined,
+    events: [],
   }
-  if (fixedQueryId !== undefined && foundResultCache !== undefined) {
-    result.xhr = foundResultCache.result.xhr
+  if (resultRequired && foundResultCache) {
     result.events = foundResultCache.result.events
+    if (foundResultCache.result.xhr) {
+      result.xhr = foundResultCache.result.xhr
+    }
     if (foundResultCache.result.error) {
       result.error = foundResultCache.result.error
     }
