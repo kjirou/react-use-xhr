@@ -71,7 +71,7 @@ type UseXhrState = {
 
 function receiveResponseIntoState(
   state: UseXhrState,
-  maxResultCache: NonNullable<UseXhrOptionsValue['maxResultCache']>,
+  maxResultCacheSetting: NonNullable<UseXhrOptionsValue['maxResultCache']>,
   error: Error | null,
   response: SendHttpRequestResult,
 ): UseXhrState {
@@ -90,7 +90,7 @@ function receiveResponseIntoState(
   }
   const resultCaches: UseXhrResultCache[] = findResultCache(state.resultCaches, unresolvedQueryId)
     ? replaceResultCache(state.resultCaches, newResultCache)
-    : appendItemAsLastInFirstOut<UseXhrResultCache>(state.resultCaches, newResultCache, maxResultCache)
+    : appendItemAsLastInFirstOut<UseXhrResultCache>(state.resultCaches, newResultCache, maxResultCacheSetting)
   const newState: UseXhrState = {
     reservedNewRequest: false,
     resultCaches,
@@ -112,7 +112,7 @@ export function useXhr(
     resultCaches: [],
   })
   const unmountedRef = React.useRef(false)
-  const maxResultCache = options.maxResultCache !== undefined
+  const maxResultCacheSetting = options.maxResultCache !== undefined
     ? options.maxResultCache : 1
   const sendHttpRequestOptions = deriveSendHttpRequestOptions(options)
   const fixedQueryId: QueryId | undefined = queryId !== undefined ? queryId : query
@@ -130,7 +130,7 @@ export function useXhr(
     !areEquivalentAAndB(fixedQueryId, state.unresolvedQueryId) &&
     foundResultCache === undefined
 
-  if (maxResultCache < 1) {
+  if (maxResultCacheSetting < 1) {
     throw new Error('`maxResultCache` is less than 1.')
   } else if (invalidQuery) {
     throw new Error('Can not specify only `queryId`.')
@@ -174,7 +174,7 @@ export function useXhr(
                 currentState.unresolvedQueryId !== undefined &&
                 areEquivalentAAndB(currentState.unresolvedQueryId, state.unresolvedQueryId)
               ) {
-                return receiveResponseIntoState(currentState, maxResultCache, error, response)
+                return receiveResponseIntoState(currentState, maxResultCacheSetting, error, response)
               }
               return currentState
             })
