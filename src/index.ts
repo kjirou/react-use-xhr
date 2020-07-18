@@ -127,7 +127,7 @@ export function useXhr(
           if (!unmountedRef.current) {
             // State Transition: 3
             setState(function(current) {
-              const unresolvedQueryId = current.unresolvedQueryId;
+              const unresolvedQueryId = current.unresolvedQueryId
               if (
                 unresolvedQueryId !== undefined &&
                 state.unresolvedQueryId === unresolvedQueryId
@@ -145,7 +145,7 @@ export function useXhr(
                 return {
                   reservedNewRequest: false,
                   resultCaches: appendItemAsLastInFirstOut<UseXhrResultCache>(
-                    state.resultCaches, resultCache, maxResultCache)
+                    state.resultCaches, resultCache, maxResultCache),
                 }
               }
               return current
