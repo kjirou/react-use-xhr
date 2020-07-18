@@ -39,12 +39,13 @@ export function sendHttpRequest(
 ): XMLHttpRequest {
   const timeout: number | undefined = options.timeout !== undefined ? options.timeout : undefined
   const xhr = new XMLHttpRequest()
-  const result: SendHttpRequestResult = {
-    xhr,
-    events: [],
-  }
+  const allEvents: SendHttpRequestResult['events'] = [];
   xhr.onloadend = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    const result: SendHttpRequestResult = {
+      xhr,
+      events: allEvents.slice(),
+    };
     const error: Error | null =
       result.events.some(function(event) {
         return ['abort', 'error', 'timeout'].indexOf(event.type) !== -1
@@ -54,22 +55,28 @@ export function sendHttpRequest(
     handleEvent(error, result)
   }
   xhr.onloadstart = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    handleEvent(null, {events: allEvents.slice()})
   }
   xhr.onabort = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    handleEvent(null, {events: allEvents.slice()})
   }
   xhr.onerror = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    handleEvent(null, {events: allEvents.slice()})
   }
   xhr.onprogress = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    handleEvent(null, {events: allEvents.slice()})
   }
   xhr.onload = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    handleEvent(null, {events: allEvents.slice()})
   }
   xhr.ontimeout = function(event: ProgressEvent) {
-    result.events.push(event)
+    allEvents.push(event)
+    handleEvent(null, {events: allEvents.slice()})
   }
   xhr.open(data.httpMethod, data.url)
   const headers = data.headers || {}
