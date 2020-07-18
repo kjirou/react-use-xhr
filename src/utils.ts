@@ -32,6 +32,10 @@ export type SendHttpRequestResult = {
   xhr?: XMLHttpRequest,
 }
 
+/**
+ * The `handleEvent`'s error argument will be passed a runtime error in the event handler,
+ *   but it's now always null.
+ */
 export function sendHttpRequest(
   data: SendHttpRequestData,
   handleEvent: (error: Error | null, result: SendHttpRequestResult) => void,
@@ -46,13 +50,7 @@ export function sendHttpRequest(
       xhr,
       events: allEvents.slice(),
     };
-    const error: Error | null =
-      result.events.some(function(event) {
-        return ['abort', 'error', 'timeout'].indexOf(event.type) !== -1
-      })
-      ? new Error('Some XHR error has occurred.')
-      : null
-    handleEvent(error, result)
+    handleEvent(null, result)
   }
   xhr.onloadstart = function(event: ProgressEvent) {
     allEvents.push(event)

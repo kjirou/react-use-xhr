@@ -86,23 +86,22 @@ describe('src/utils', () => {
               try {
                 expect(result.events[0].type).toBe('loadstart')
                 done()
-              } catch (error) {
-                done(error)
+              } catch (exception) {
+                done(exception)
               }
             }, 25)
           })
 
-          it('should return "loadend" event with an xhr instance without an error at the last call', (done) => {
+          it('should return "loadend" event with an xhr instance at the last call', (done) => {
             sendHttpRequest(requestData, handleEvent)
             setTimeout(() => {
               const [error, result] = handleEvent.lastCall.args
               try {
                 expect(result.events[result.events.length - 1].type).toBe('loadend')
                 expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
-                expect(error).toBe(null)
                 done()
-              } catch (error) {
-                done(error)
+              } catch (exception) {
+                done(exception)
               }
             }, 25)
           })
@@ -130,20 +129,6 @@ describe('src/utils', () => {
             }, 1)
             return handleEvent;
           }
-        })
-
-        it('should return an error at the last call', (done) => {
-          const handleEvent = sendHttpRequestForTest()
-          setTimeout(() => {
-            const [error, result] = handleEvent.lastCall.args
-            try {
-              expect(error).toBeInstanceOf(Error)
-              expect(error.message).toContain(' XHR error ')
-              done()
-            } catch (exception) {
-              done(exception)
-            }
-          }, 25)
         })
 
         it('should include an "abort" event before the "loadend" event at the last call', (done) => {
@@ -178,20 +163,6 @@ describe('src/utils', () => {
             )
             return handleEvent;
           }
-        })
-
-        it('should return an error at the last call', (done) => {
-          const handleEvent = sendHttpRequestForTest()
-          setTimeout(() => {
-            const [error, result] = handleEvent.lastCall.args
-            try {
-              expect(error).toBeInstanceOf(Error)
-              expect(error.message).toContain(' XHR error ')
-              done()
-            } catch (exception) {
-              done(exception)
-            }
-          }, 25)
         })
 
         it('should include a "timeout" event before the "loadend" event at the last call', (done) => {
