@@ -1,7 +1,7 @@
 {
   "name": "react-use-xhr",
   "version": "0.0.0",
-  "description": "ATODE",
+  "description": "A simple React hook that communicates via XMLHttpRequest(XHR)",
   "main": "dist/index.js",
   "types": "dist/index.d.js",
   "scripts": {
@@ -23,6 +23,12 @@
   "engines": {
     "node": ">=10"
   },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist",
+    "package.json"
+  ],
   "devDependencies": {
     "@types/jest": "^26.0.3",
     "@types/lodash.isequal": "^4.5.5",
