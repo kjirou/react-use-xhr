@@ -29,7 +29,7 @@ export type SendHttpRequestOptions = {
 
 export type SendHttpRequestResult = {
   events: ProgressEvent[],
-  xhr: XMLHttpRequest,
+  xhr?: XMLHttpRequest,
 }
 
 export function sendHttpRequest(

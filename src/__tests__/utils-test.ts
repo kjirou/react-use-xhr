@@ -80,8 +80,8 @@ describe('src/utils', () => {
           it('can receive xhr instance', (done) => {
             sendHttpRequest(requestData, (error_, result) => {
               expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
-              expect(result.xhr.status).toBe(200)
-              expect(result.xhr.responseText).toBe('BAR')
+              expect(result.xhr?.status).toBe(200)
+              expect(result.xhr?.responseText).toBe('BAR')
               done()
             })
           })
