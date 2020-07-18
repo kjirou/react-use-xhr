@@ -702,6 +702,44 @@ describe('src/index', () => {
       })
     })
 
+    describe('when it gets a heavy resource', () => {
+      const Tester: React.FC<{handleResult: any}> = (props) => {
+        const result = useXhr({httpMethod: 'GET', url: '/heavy'})
+        props.handleResult(result)
+        return React.createElement('div')
+      }
+      const body = '1234567890'.repeat(1000000)
+      let handleResult: any
+
+      beforeEach(async () => {
+        xhrMock.get('/heavy', {
+          status: 200,
+          headers: {
+            'Content-Length': body.length.toString(),
+          },
+          body,
+        })
+        handleResult = sinon.spy()
+        await ReactTestRenderer.act(async () => {
+          ReactTestRenderer.create(
+            React.createElement(Tester, {handleResult}),
+          )
+          await sleep(100)
+        })
+      })
+
+      it('should include a "progress" event at the last render', () => {
+        expect(handleResult.lastCall.args[0].events.some((event: ProgressEvent) => event.type === 'progress'))
+          .toBe(true)
+      })
+
+      it('should return a xhr instance at the last render', () => {
+        expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
+      })
+
+      it.todo('can handle the "progress" event in several times')
+    })
+
     describe('when the hook is unmounted in request', () => {
       it.todo('should do nothing')
     })
