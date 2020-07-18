@@ -136,11 +136,9 @@ export function useXhr(
                   queryId: unresolvedQueryId,
                   result: {
                     events: requestResult.events,
+                    ...(error ? {error: error} : {}),
                     ...(requestResult.xhr ? {xhr: requestResult.xhr} : {}),
                   },
-                }
-                if (error) {
-                  resultCache.result.error = error
                 }
                 return {
                   reservedNewRequest: false,
