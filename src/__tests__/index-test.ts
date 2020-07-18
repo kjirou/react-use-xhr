@@ -152,7 +152,7 @@ describe('src/index', () => {
       })
     })
 
-    describe('can not change query if queryId is not changed', () => {
+    describe('when it changes only query without changing queryId', () => {
       const originalConsoleError = console.error;
 
       beforeEach(() => {
@@ -165,7 +165,7 @@ describe('src/index', () => {
         console.error = originalConsoleError
       })
 
-      it('should throw an error if query is changed in the same queryId', async () => {
+      it('should throw an error', async () => {
         const Tester: React.FC<{body: string}> = (props) => {
           useXhr({
             httpMethod: 'GET',
@@ -212,7 +212,7 @@ describe('src/index', () => {
       beforeEach(async () => {
         xhrMock.use('GET', '/foo', {
           status: 200,
-          body: 'BAR',
+          body: 'FOO',
         })
         handleResult = sinon.spy()
         await ReactTestRenderer.act(async () => {
@@ -222,14 +222,44 @@ describe('src/index', () => {
         })
       })
 
-      it('should return isLoading=false without any xhr instance at the first render', () => {
-        expect(handleResult.firstCall.args[0].isLoading).toBe(false)
-        expect(handleResult.firstCall.args[0].xhr).toBe(undefined)
+      describe('in the first render', () => {
+        let result: UseXhrResult
+
+        beforeEach(() => {
+          result = handleResult.firstCall.args[0]
+        });
+
+        it('should return isLoading=false', () => {
+          expect(result.isLoading).toBe(false)
+        })
+
+        it('should return an empty events', () => {
+          expect(result.events).toEqual([])
+        })
+
+        it('should not return the "xhr" property', () => {
+          expect(result).not.toHaveProperty('xhr')
+        })
       })
 
-      it('should return isLoading=false without any xhr instance at the last render', () => {
-        expect(handleResult.lastCall.args[0].isLoading).toBe(false)
-        expect(handleResult.lastCall.args[0].xhr).toBe(undefined)
+      describe('in the last render', () => {
+        let result: UseXhrResult
+
+        beforeEach(() => {
+          result = handleResult.lastCall.args[0]
+        });
+
+        it('should return isLoading=false', () => {
+          expect(result.isLoading).toBe(false)
+        })
+
+        it('should return an empty events', () => {
+          expect(result.events).toEqual([])
+        })
+
+        it('should not return the "xhr" property', () => {
+          expect(result).not.toHaveProperty('xhr')
+        })
       })
     })
 
@@ -250,7 +280,7 @@ describe('src/index', () => {
       beforeEach(async () => {
         xhrMock.use('GET', '/foo', {
           status: 200,
-          body: 'BAR',
+          body: 'FOO',
         })
         handleResult = sinon.spy()
         await ReactTestRenderer.act(async () => {
@@ -260,42 +290,60 @@ describe('src/index', () => {
         })
       })
 
-      it('should return isLoading=true without any property at the first render', () => {
-        expect(handleResult.firstCall.args[0].isLoading).toBe(true)
-        expect(handleResult.firstCall.args[0]).not.toHaveProperty('xhr')
-        expect(handleResult.firstCall.args[0]).not.toHaveProperty('events')
-        expect(handleResult.firstCall.args[0]).not.toHaveProperty('error')
+      describe('in the first render', () => {
+        let result: UseXhrResult
+
+        beforeEach(() => {
+          result = handleResult.firstCall.args[0]
+        });
+
+        it('should return isLoading=true', () => {
+          expect(result.isLoading).toBe(true)
+        })
+
+        it('should return an empty events', () => {
+          expect(result.events).toEqual([])
+        })
+
+        it('should not return the "xhr" property', () => {
+          expect(result).not.toHaveProperty('xhr')
+        })
       })
 
-      it('should return isLoading=false at the last render', () => {
-        expect(handleResult.lastCall.args[0].isLoading).toBe(false)
-      })
+      describe('in the last render', () => {
+        let result: UseXhrResult
 
-      it('should return a xhr instance at the last render', () => {
-        expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
-        expect(handleResult.lastCall.args[0].xhr.status).toBe(200)
-        expect(handleResult.lastCall.args[0].xhr.responseText).toBe('BAR')
-      })
+        beforeEach(() => {
+          result = handleResult.lastCall.args[0]
+        });
 
-      it('should include "loadend" event to the end of the events at the last render', () => {
-        const events = handleResult.lastCall.args[0].events
-        const lastEvent = events[events.length - 1]
-        expect(lastEvent.type).toBe('loadend')
-      })
+        it('should return isLoading=false', () => {
+          expect(result.isLoading).toBe(false)
+        })
 
-      it('should return without any error at the last render', () => {
-        expect(handleResult.lastCall.args[0]).not.toHaveProperty('error')
+        it('should include the "loadstart" in the events at the first', () => {
+          expect(result.events[0].type).toBe('loadstart')
+        })
+
+        it('should include the "loadend" in the events at the last', () => {
+          expect(result.events[result.events.length - 1].type).toBe('loadend')
+        })
+
+        it('should return an xhr instance', () => {
+          expect(result.xhr).toBeInstanceOf(XMLHttpRequest)
+          expect(result.xhr?.status).toBe(200)
+          expect(result.xhr?.responseText).toBe('FOO')
+        })
       })
     })
 
-    describe('when it sets an undefined after setting a value to queryId', () => {
+    describe('when it sets an undefined to query after setting a value', () => {
       type TesterProps = {
         handleResult: any,
         query: SendHttpRequestData | undefined,
-        queryId: string | undefined,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.query, props.queryId)
+        const result = useXhr(props.query)
         props.handleResult(result)
         return React.createElement('div')
       }
@@ -305,13 +353,12 @@ describe('src/index', () => {
       beforeEach(async () => {
         xhrMock.use('GET', '/foo', {
           status: 200,
-          body: 'BAR',
+          body: 'FOO',
         })
         handleResult = sinon.spy()
         await ReactTestRenderer.act(async () => {
           testRenderer = ReactTestRenderer.create(
             React.createElement(Tester, {
-              queryId: 'a',
               query: {
                 httpMethod: 'GET',
                 url: '/foo',
@@ -323,7 +370,6 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer.update(
             React.createElement(Tester, {
-              queryId: undefined,
               query: undefined,
               handleResult,
             }),
@@ -331,43 +377,41 @@ describe('src/index', () => {
         })
       })
 
-      it('should return isLoading=false and xhr=undefined at the last render', () => {
+      it('should return isLoading=false without any xhr instance at the last render', () => {
         expect(handleResult.lastCall.args[0].isLoading).toBe(false)
-        expect(handleResult.lastCall.args[0].xhr).toBe(undefined)
+        expect(handleResult.lastCall.args[0]).not.toHaveProperty('xhr')
       })
     })
 
-    describe('when it sends and receives the 2nd request(="b") before resolving the 1st request(="a")', () => {
+    describe('when it sends and receives the second request before resolving the first request', () => {
       type TesterProps = {
         handleResult: any,
         query: SendHttpRequestData,
-        queryId: string,
       }
       const Tester: React.FC<TesterProps> = (props) => {
-        const result = useXhr(props.query, props.queryId)
-        props.handleResult(props.queryId, result)
+        const result = useXhr(props.query)
+        props.handleResult(result)
         return React.createElement('div')
       }
       let handleResult: TesterProps['handleResult']
       let testRenderer: any = undefined
 
       beforeEach(async () => {
-        xhrMock.use('GET', '/foo', delay({
+        xhrMock.use('GET', '/first', delay({
           status: 200,
-          body: 'FOO',
+          body: 'FIRST',
         }, 100))
-        xhrMock.use('GET', '/bar', delay({
+        xhrMock.use('GET', '/second', delay({
           status: 200,
-          body: 'BAR',
+          body: 'SECOND',
         }, 50))
         handleResult = sinon.spy()
         await ReactTestRenderer.act(async () => {
           testRenderer = ReactTestRenderer.create(
             React.createElement(Tester, {
-              queryId: 'a',
               query: {
                 httpMethod: 'GET',
-                url: '/foo',
+                url: '/first',
               },
               handleResult,
             }),
@@ -376,10 +420,9 @@ describe('src/index', () => {
         await ReactTestRenderer.act(async () => {
           testRenderer.update(
             React.createElement(Tester, {
-              queryId: 'b',
               query: {
                 httpMethod: 'GET',
-                url: '/bar',
+                url: '/second',
               },
               handleResult,
             }),
@@ -388,30 +431,25 @@ describe('src/index', () => {
         })
       })
 
-      it('should return the result of "b" at the last render', () => {
-        expect(handleResult.lastCall.args[0]).toBe('b')
-        expect(handleResult.lastCall.args[1].xhr).toBeInstanceOf(XMLHttpRequest)
-        expect(handleResult.lastCall.args[1].xhr.responseText).toBe('BAR')
+      it('should return a result of the second request at the last render', () => {
+        expect(handleResult.lastCall.args[0].xhr).toBeInstanceOf(XMLHttpRequest)
+        expect(handleResult.lastCall.args[0].xhr.responseText).toBe('SECOND')
       })
 
-      it('should never receives the result of "a"', () => {
-        const aCalls = handleResult.getCalls()
-          .filter((call: any) => call.args[0] === 'a')
-        expect(aCalls.length).toBeGreaterThan(0)
-        for (const call of aCalls) {
-          expect(call.args[1].isLoading).toBe(true)
-          expect(call.args[1].xhr).toBe(undefined)
+      it('should never receives any result of the first request', () => {
+        for (const call of handleResult.getCalls()) {
+          expect(call.args[0].xhr?.responseText).not.toBe('FIRST')
         }
       })
 
-      it('should switch isLoading value from true to false only once', () => {
+      it('should switch "isLoading" value from true to false only once', () => {
         let nextExpectedValue = true
         for (const call of handleResult.getCalls()) {
-          const isLoading = call.args[1].isLoading
+          const isLoading = call.args[0].isLoading
           if (nextExpectedValue === true && isLoading === false) {
             nextExpectedValue = false
           }
-          expect(call.args[1].isLoading).toBe(nextExpectedValue)
+          expect(call.args[0].isLoading).toBe(nextExpectedValue)
         }
       })
     })
@@ -661,10 +699,6 @@ describe('src/index', () => {
 
       it('should include "timeout" event in the result at the last render', () => {
         expect(handleResult.lastCall.args[0].events.some((e: any) => e.type === 'timeout')).toBe(true)
-      })
-
-      it('should have an error in the result at the last render', () => {
-        expect(handleResult.lastCall.args[0].error).toBeInstanceOf(Error)
       })
     })
 
