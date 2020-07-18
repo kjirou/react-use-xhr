@@ -17,7 +17,7 @@ type UseXhrResultCache = {
   result: {
     error?: Error,
     events: SendHttpRequestResult['events'],
-    xhr: SendHttpRequestResult['xhr'],
+    xhr?: SendHttpRequestResult['xhr'],
   },
 }
 
@@ -135,8 +135,8 @@ export function useXhr(
                 const resultCache: UseXhrResultCache = {
                   queryId: unresolvedQueryId,
                   result: {
-                    xhr: requestResult.xhr,
                     events: requestResult.events,
+                    ...(requestResult.xhr ? {xhr: requestResult.xhr} : {}),
                   },
                 }
                 if (error) {
