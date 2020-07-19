@@ -56,6 +56,7 @@ npm install react-use-xhr
 #### Overview
 
 ```js
+import {useXhr} from 'react-use-xhr'
 const result = useXhr(query, queryId, options)
 ```
 
@@ -88,7 +89,7 @@ An object that contains the communication status and the response result.
   This will be passed when the communication is complete. It does not always exist when `isLoading` is `true`.
 
 
-## :bust_in_silhouette: Examples
+## :bust_in_silhouette: Use Cases
 ### Handle communication failures
 
 XHR tells exceptional results to the outside on the event.  
@@ -109,7 +110,7 @@ if (isCommunicationFailed(result.events)) {
 If you specify and change `queryId`, it will send the request again even if `query` is the same.
 
 ```js
-// When discarding the request every 1 minute.
+// Resend the request every minute.
 const everyOneMunite = Math.floor(new Date().getTime() / (1000 * 60))
 const result = useXhr(query, everyOneMunite)
 ```
