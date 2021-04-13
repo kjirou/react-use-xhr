@@ -1,5 +1,5 @@
 {
-  "name": "react-use-xhr",
+  "name": "@kjirou/react-use-xhr",
   "version": "0.0.1",
   "description": "A simple React hook that communicates via XMLHttpRequest(XHR)",
   "main": "dist/index.js",
